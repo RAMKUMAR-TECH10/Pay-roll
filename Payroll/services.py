@@ -13,10 +13,10 @@ class ProductionService:
         if not recipe_items:
             # Fallback to default recipe if none configured
             return {
-                "Wood Splints": 0.5,
-                "Chemical Paste": 0.1,
-                "Cardboard Sheets": 5,
-                "Glue": 0.05
+                "Wood Splints": 0.25,
+                "Chemical Paste": 0.7,
+                "Cardboard Sheets": 0.12,
+                "Glue": 0.0
             }
         
         recipe_dict = {}

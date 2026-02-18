@@ -154,7 +154,7 @@ class Recipe(db.Model):
     material = db.relationship('RawMaterial', backref=db.backref('recipe_items', lazy='dynamic'))
     
     __table_args__ = (
-        db.CheckConstraint('quantity_per_bundle > 0', name='check_recipe_quantity_positive'),
+        db.CheckConstraint('quantity_per_bundle >= 0', name='check_recipe_quantity_non_negative'),
     )
     
     def __repr__(self):

@@ -13,10 +13,10 @@ raw_materials = {
 # Standard "Recipe" for 1 Bundle (10 matchboxes)
 # This is our Bill of Materials (BOM)
 RECIPE = {
-    "Wood Splints": 0.5,      # 0.5 kg per bundle
-    "Chemical Paste": 0.1,    # 0.1 kg per bundle
-    "Cardboard Sheets": 5,    # 5 sheets per bundle
-    "Glue": 0.05              # 0.05 liters per bundle
+    "Wood Splints": 0.25,      # 0.25 kg per bundle
+    "Chemical Paste": 0.7,     # 0.7 kg per bundle
+    "Cardboard Sheets": 0.12,  # 0.12 kg per bundle
+    "Glue": 0.0               # 0.0 kg per bundle
 }
 
 production_history = []

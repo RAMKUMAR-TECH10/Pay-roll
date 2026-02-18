@@ -30,10 +30,9 @@
             style="margin-top: 20px; padding: 15px; background: rgba(59, 130, 246, 0.1); border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.2);">
             <h4 style="margin-top: 0; color: #3b82f6;">Recipe per Bundle</h4>
             <ul style="padding-left: 20px; font-size: 0.9rem; color: #cbd5e1; margin-bottom: 0;">
-                <li>Wood Splints: 0.5 kg</li>
-                <li>Chemical Paste: 0.1 kg</li>
-                <li>Cardboard Sheets: 5 pcs</li>
-                <li>Glue: 0.05 L</li>
+                {% for item in recipe %}
+                <li>{{ item.name }}: {{ item.quantity }} {{ item.unit }}</li>
+                {% endfor %}
             </ul>
         </div>
     </div>

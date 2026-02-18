@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
-from models import db, RawMaterial, ProductionLog, MaterialTransaction
+from models import db, RawMaterial, ProductionLog, MaterialTransaction, Recipe
 from services import ProductionService, InventoryService, ReportService, ProfitService
 import datetime
 
@@ -94,9 +94,21 @@ def production():
         .order_by(ProductionLog.date.desc(), ProductionLog.id.desc())\
         .paginate(page=page, per_page=per_page, error_out=False)
     
+    # Fetch active recipe for display
+    recipe = ProductionService.get_active_recipe()
+    recipe_display = []
+    for material_name, qty in recipe.items():
+        material = RawMaterial.query.filter_by(name=material_name).first()
+        recipe_display.append({
+            'name': material_name,
+            'quantity': qty,
+            'unit': material.unit if material else ''
+        })
+    
     return render_template('production.html', 
                          logs=pagination.items,
-                         pagination=pagination)
+                         pagination=pagination,
+                         recipe=recipe_display)
 
 @bp.route('/production/undo/<int:id>', methods=['POST'])
 @login_required

@@ -46,6 +46,7 @@ def create_app(config_name='default'):
         seed_database()
         create_default_admin()
         seed_default_settings()
+        update_material_and_recipe_data()
     
     # Start background email alert thread (for admin notifications)
     if app.config.get('EMAIL_ENABLED', False):
@@ -80,10 +81,10 @@ def seed_database():
     # Seed raw materials
     if not RawMaterial.query.first():
         seed_materials = [
-            RawMaterial(name="Wood Splints", quantity=500.0, unit="kg", unit_price=10),
-            RawMaterial(name="Chemical Paste", quantity=100.0, unit="kg", unit_price=50),
-            RawMaterial(name="Cardboard Sheets", quantity=1000.0, unit="pcs", unit_price=2),
-            RawMaterial(name="Glue", quantity=50.0, unit="liters", unit_price=15)
+            RawMaterial(name="Wood Splints", quantity=500.0, unit="kg", unit_price=35),
+            RawMaterial(name="Chemical Paste", quantity=100.0, unit="kg", unit_price=80),
+            RawMaterial(name="Cardboard Sheets", quantity=1000.0, unit="kg", unit_price=46),
+            RawMaterial(name="Glue", quantity=50.0, unit="kg", unit_price=130)
         ]    
         db.session.add_all(seed_materials)
         db.session.commit()
@@ -99,14 +100,52 @@ def seed_database():
         
         if wood and chemical and cardboard and glue:
             seed_recipe = [
-                Recipe(material_id=wood.id, quantity_per_bundle=0.5, is_active=True),
-                Recipe(material_id=chemical.id, quantity_per_bundle=0.1, is_active=True),
-                Recipe(material_id=cardboard.id, quantity_per_bundle=5, is_active=True),
-                Recipe(material_id=glue.id, quantity_per_bundle=0.05, is_active=True)
+                Recipe(material_id=wood.id, quantity_per_bundle=0.25, is_active=True),
+                Recipe(material_id=chemical.id, quantity_per_bundle=0.7, is_active=True),
+                Recipe(material_id=cardboard.id, quantity_per_bundle=0.12, is_active=True),
+                Recipe(material_id=glue.id, quantity_per_bundle=0.0, is_active=True)
             ]
             db.session.add_all(seed_recipe)
             db.session.commit()
             print("Database seeded with recipe.")
+
+def update_material_and_recipe_data():
+    """Update existing material and recipe records to match current intended values"""
+    # Correct material data: name -> (unit, unit_price)
+    correct_materials = {
+        "Wood Splints": ("kg", 35),
+        "Chemical Paste": ("kg", 80),
+        "Cardboard Sheets": ("kg", 46),
+        "Glue": ("kg", 130)
+    }
+    
+    updated = False
+    for name, (unit, price) in correct_materials.items():
+        material = RawMaterial.query.filter_by(name=name).first()
+        if material and (material.unit != unit or material.unit_price != price):
+            material.unit = unit
+            material.unit_price = price
+            updated = True
+    
+    # Correct recipe data: material_name -> quantity_per_bundle
+    correct_recipe = {
+        "Wood Splints": 0.25,
+        "Chemical Paste": 0.7,
+        "Cardboard Sheets": 0.12,
+        "Glue": 0.0
+    }
+    
+    for material_name, qty in correct_recipe.items():
+        material = RawMaterial.query.filter_by(name=material_name).first()
+        if material:
+            recipe_item = Recipe.query.filter_by(material_id=material.id, is_active=True).first()
+            if recipe_item and recipe_item.quantity_per_bundle != qty:
+                recipe_item.quantity_per_bundle = qty
+                updated = True
+    
+    if updated:
+        db.session.commit()
+        print("Material and recipe data updated to match current values.")
 
 def start_background_alerts(app):
     """Start a background thread to send periodic email alerts to admin"""
