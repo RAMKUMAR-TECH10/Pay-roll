@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}Production{% endblock %}
+{% block header %}Log Production{% endblock %}
+
+{% block content %}
+<div class="grid-container" style="grid-template-columns: 1fr 2fr;">
+    <!-- Production Form -->
+    <div class="card">
+        <h3>New Production Run</h3>
+        <form method="POST" action="{{ url_for('main.production') }}">
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; color: #94a3b8;">Bundles Produced</label>
+                <input type="number" name="quantity" min="1" required
+                    style="width: 100%; padding: 10px; background: #334155; border: 1px solid #475569; color: white; border-radius: 5px;">
+                <small style="color: #64748b; display: block; margin-top: 5px;">Input total bundles completed.</small>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 5px; color: #94a3b8;">Notes (Optional)</label>
+                <textarea name="notes" rows="3"
+                    style="width: 100%; padding: 10px; background: #334155; border: 1px solid #475569; color: white; border-radius: 5px; resize: vertical;"
+                    placeholder="Add any notes about this production run..."></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%;">Log Production</button>
+        </form>
+
+        <div
+            style="margin-top: 20px; padding: 15px; background: rgba(59, 130, 246, 0.1); border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.2);">
+            <h4 style="margin-top: 0; color: #3b82f6;">Recipe per Bundle</h4>
+            <ul style="padding-left: 20px; font-size: 0.9rem; color: #cbd5e1; margin-bottom: 0;">
+                <li>Wood Splints: 0.5 kg</li>
+                <li>Chemical Paste: 0.1 kg</li>
+                <li>Cardboard Sheets: 5 pcs</li>
+                <li>Glue: 0.05 L</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Production Log (History) -->
+    <div class="card">
+        <h3>Recent Production Logs</h3>
+        <div style="max-height: 500px; overflow-y: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Bundles</th>
+                        <th>Notes</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr>
+                        <td>{{ log.date }}</td>
+                        <td>{{ log.bundles_produced }}</td>
+                        <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                            {{ log.notes or '-' }}
+                        </td>
+                        <td>
+                            <form method="POST" action="{{ url_for('main.undo_production', id=log.id) }}"
+                                style="display: inline;">
+                                <button type="submit" class="btn"
+                                    style="padding: 5px 10px; font-size: 0.8rem; background: rgba(245, 158, 11, 0.1); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.2);"
+                                    onclick="return confirm('Undo this production? Materials will be restored.')">Undo</button>
+                            </form>
+                            <a href="{{ url_for('main.delete_production', id=log.id) }}" class="btn btn-danger"
+                                style="padding: 5px 10px; font-size: 0.8rem;"
+                                onclick="return confirm('Delete this production log?')">Delete</a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" style="text-align: center; color: #94a3b8; padding: 30px;">No production logs
+                            yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if pagination and pagination.pages > 1 %}
+        <div style="margin-top: 20px; text-align: center;">
+            <div style="display: inline-flex; gap: 5px;">
+                {% if pagination.has_prev %}
+                <a href="{{ url_for('main.production', page=pagination.prev_num) }}" class="btn"
+                    style="padding: 5px 10px;">Previous</a>
+                {% endif %}
+
+                <span style="padding: 5px 15px; color: #94a3b8;">
+                    Page {{ pagination.page }} of {{ pagination.pages }}
+                </span>
+
+                {% if pagination.has_next %}
+                <a href="{{ url_for('main.production', page=pagination.next_num) }}" class="btn"
+                    style="padding: 5px 10px;">Next</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

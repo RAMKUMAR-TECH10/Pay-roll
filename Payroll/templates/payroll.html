@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}Payroll{% endblock %}
+{% block header %}Payroll & Salary Slips{% endblock %}
+
+{% block content %}
+<!-- Summary Cards -->
+<div class="grid-container">
+    <div class="card" style="border-left: 5px solid var(--accent-color);">
+        <h3>Total Paid History</h3>
+        <div class="value" style="color: var(--accent-color);">₹{{ "%.2f"|format(total_paid) }}</div>
+    </div>
+    <div class="card" style="border-left: 5px solid #f59e0b;">
+        <h3>Pending Payouts</h3>
+        <div class="value" style="color: #f59e0b;">₹{{ "%.2f"|format(pending_total) }}</div>
+    </div>
+    <div class="card" style="border-left: 5px solid var(--success-color);">
+        <h3>Quick Actions</h3>
+        <div style="margin-top: 10px;">
+            <a href="{{ url_for('export_payroll') }}" class="btn btn-primary"
+                style="width: 100%; text-align: center;">Download History (CSV)</a>
+        </div>
+    </div>
+</div>
+
+<div class="grid-container" style="grid-template-columns: 2fr 1fr;">
+    <!-- Pending Payrolls -->
+    <div class="card">
+        <h3>Pending Salary Payments</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Employee</th>
+                    <th>Unpaid Bundles</th>
+                    <th>Est. Amount</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in pending_payrolls %}
+                <tr>
+                    <td>
+                        {{ item.employee.name }}<br>
+                        <small style="color: #64748b;">{{ item.employee.role }}</small>
+                    </td>
+                    <td>{{ item.bundles }}</td>
+                    <td style="color: var(--success-color); font-weight: bold;">₹{{ "%.2f"|format(item.amount) }}</td>
+                    <td>
+                        <form method="POST" action="{{ url_for('payroll') }}">
+                            <input type="hidden" name="employee_id" value="{{ item.employee.id }}">
+                            <button type="submit" class="btn btn-primary"
+                                style="padding: 5px 15px; font-size: 0.9rem;">Pay Now</button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" style="text-align: center; color: #94a3b8; padding: 30px;">All caught up! No pending
+                        payments.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Payroll History -->
+    <div class="card">
+        <h3>Payment History</h3>
+        <div style="max-height: 500px; overflow-y: auto;">
+            {% for slip in history %}
+            <a href="{{ url_for('salary_slip', id=slip.id) }}" style="text-decoration: none; color: inherit;">
+                <div class="history-item"
+                    style="background: rgba(255,255,255,0.03); padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 3px solid var(--success-color); cursor: pointer; transition: all 0.2s;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <span style="font-weight: bold;">{{ slip.employee.name }}</span>
+                        <span style="color: #94a3b8; font-size: 0.8rem;">{{ slip.date_generated.strftime('%Y-%m-%d')
+                            }}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+                        <div>
+                            <div style="font-size: 1.2rem; font-weight: bold; color: var(--success-color);">₹{{
+                                "%.2f"|format(slip.total_amount) }}</div>
+                            <div style="font-size: 0.8rem; color: #64748b;">
+                                {{ slip.total_bundles }} Bundles
+                            </div>
+                        </div>
+                        <div style="font-size: 0.8rem; color: var(--accent-color);">View Slip &rarr;</div>
+                    </div>
+                </div>
+            </a>
+            {% else %}
+            <div style="text-align: center; color: #94a3b8; padding: 20px;">No history yet.</div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<style>
+    .history-item:hover {
+        background: rgba(255, 255, 255, 0.08) !important;
+        transform: translateX(5px);
+    }
+</style>
+{% endblock %}

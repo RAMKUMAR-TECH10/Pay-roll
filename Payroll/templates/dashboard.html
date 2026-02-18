@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+{% block header %}Overview{% endblock %}
+
+{% block content %}
+<!-- Quick Stats Banner -->
+<div
+    style="background: linear-gradient(90deg, var(--accent-color), #88c1ff); padding: 2px; border-radius: 16px; margin-bottom: 30px;">
+    <div
+        style="background: var(--bg-color); border-radius: 15px; padding: 20px; display: flex; justify-content: space-around; align-items: center;">
+        <div style="text-align: center;">
+            <div style="color: #8b949e; font-size: 0.8rem; text-transform: uppercase; margin-bottom: 5px;">Active Since
+            </div>
+            <div style="font-weight: bold; font-size: 1.1rem;">Feb 2026</div>
+        </div>
+        <div style="width: 1px; height: 30px; background: var(--border-color);"></div>
+        <div style="text-align: center;">
+            <div style="color: #8b949e; font-size: 0.8rem; text-transform: uppercase; margin-bottom: 5px;">System Status
+            </div>
+            <div style="font-weight: bold; font-size: 1.1rem; color: var(--success-color);">● Operational</div>
+        </div>
+        <div style="width: 1px; height: 30px; background: var(--border-color);"></div>
+        <div style="text-align: center;">
+            <div style="color: #8b949e; font-size: 0.8rem; text-transform: uppercase; margin-bottom: 5px;">Currency
+            </div>
+            <div style="font-weight: bold; font-size: 1.1rem;">INR (₹)</div>
+        </div>
+    </div>
+</div>
+<div class="grid-container">
+    <div class="card">
+        <h3>Production Today</h3>
+        <div class="value">{{ production_today }} <span style="font-size: 0.5em; opacity: 0.7;">Bundles</span></div>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 25px; margin-bottom: 40px;">
+    <div class="card">
+        <h3>Weekly Production Trend</h3>
+        <canvas id="productionChart" style="max-height: 300px;"></canvas>
+    </div>
+    <div class="card">
+        <h3>Raw Material Status</h3>
+        <div style="max-height: 300px; overflow-y: auto;">
+            <table style="margin-top: 0; width: 100%; font-size: 0.9rem;">
+                <thead>
+                    <tr>
+                        <th>Material</th>
+                        <th>Stock</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for material in raw_materials %}
+                    <tr>
+                        <td>{{ material.name }}</td>
+                        <td>{{ material.quantity }} {{ material.unit }}</td>
+                        <td>
+                            {% if material.quantity < 20 %} <span class="badge badge-danger">Low Stock</span>
+                                {% else %}
+                                <span class="badge badge-success">Good</span>
+                                {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    const ctx = document.getElementById('productionChart').getContext('2d');
+    const chartData = {
+        labels: [{% for item in weekly_production %}"{{ item.day }}"{% if not loop.last %}, {% endif %} {% endfor %}],
+    datasets: [{
+        label: 'Bundles Produced',
+        data: [{% for item in weekly_production %}{{ item.total }}{% if not loop.last %}, {% endif %} {% endfor %}],
+    borderColor: '#58a6ff',
+        backgroundColor: 'rgba(88, 166, 255, 0.1)',
+            borderWidth: 3,
+                fill: true,
+                    tension: 0.4,
+                        pointBackgroundColor: '#58a6ff',
+                            pointRadius: 4
+        }]
+    };
+
+    new Chart(ctx, {
+        type: 'line',
+        data: chartData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(255,255,255,0.05)' },
+                    ticks: { color: '#8b949e' }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { color: '#8b949e' }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}
