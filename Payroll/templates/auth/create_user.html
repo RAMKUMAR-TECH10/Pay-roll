@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Create User{% endblock %}
+{% block header %}Create New User{% endblock %}
+
+{% block content %}
+<div style="max-width: 600px;">
+    <div class="card">
+        <div style="margin-bottom: 25px;">
+            <h3 style="margin: 0 0 5px;">Add New User Account</h3>
+            <p style="color: #64748b; margin: 0; font-size: 0.9rem;">Only admins can create accounts. Users will be
+                assigned operator or viewer roles.</p>
+        </div>
+
+        <form method="POST" action="{{ url_for('auth.create_user') }}">
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 5px; color: #94a3b8; font-weight: 500;">Username</label>
+                <input type="text" name="username" required autofocus
+                    style="width: 100%; padding: 12px; background: #1e293b; border: 1px solid #334155; color: white; border-radius: 8px; font-size: 1rem;">
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 5px; color: #94a3b8; font-weight: 500;">Full Name</label>
+                <input type="text" name="full_name" required
+                    style="width: 100%; padding: 12px; background: #1e293b; border: 1px solid #334155; color: white; border-radius: 8px; font-size: 1rem;">
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 5px; color: #94a3b8; font-weight: 500;">Email
+                    Address</label>
+                <input type="email" name="email" required
+                    style="width: 100%; padding: 12px; background: #1e293b; border: 1px solid #334155; color: white; border-radius: 8px; font-size: 1rem;">
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 5px; color: #94a3b8; font-weight: 500;">Role</label>
+                <select name="role"
+                    style="width: 100%; padding: 12px; background: #1e293b; border: 1px solid #334155; color: white; border-radius: 8px; font-size: 1rem;">
+                    <option value="operator">Operator (Can view, create, edit)</option>
+                    <option value="viewer">Viewer (Can only view)</option>
+                </select>
+                <small style="color: #64748b; font-size: 0.8rem;">Admin accounts can only be created by
+                    superadmins</small>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 5px; color: #94a3b8; font-weight: 500;">Password</label>
+                <input type="password" name="password" required minlength="6"
+                    style="width: 100%; padding: 12px; background: #1e293b; border: 1px solid #334155; color: white; border-radius: 8px; font-size: 1rem;">
+                <small style="color: #64748b; font-size: 0.8rem;">Min. 6 characters</small>
+            </div>
+
+            <div style="margin-bottom: 25px;">
+                <label style="display: block; margin-bottom: 5px; color: #94a3b8; font-weight: 500;">Confirm
+                    Password</label>
+                <input type="password" name="confirm_password" required minlength="6"
+                    style="width: 100%; padding: 12px; background: #1e293b; border: 1px solid #334155; color: white; border-radius: 8px; font-size: 1rem;">
+            </div>
+
+            <div style="display: flex; gap: 12px;">
+                <button type="submit" class="btn btn-primary" style="padding: 12px 30px; font-size: 1rem;">
+                    Create User
+                </button>
+                <a href="{{ url_for('auth.users') }}" class="btn"
+                    style="padding: 12px 30px; font-size: 1rem; background: #334155; color: #94a3b8; border: 1px solid #475569; text-decoration: none; border-radius: 8px;">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

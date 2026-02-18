@@ -1,10 +1,12 @@
 from flask import Flask
 from flask_login import LoginManager
 from config import config
-from models import db, RawMaterial, Recipe
+from models import db, RawMaterial, Recipe, SystemSettings
 from auth_models import User
 from email_service import EmailService
 import os
+import threading
+import time
 
 # Initialize extensions
 login_manager = LoginManager()
@@ -43,6 +45,11 @@ def create_app(config_name='default'):
         db.create_all()
         seed_database()
         create_default_admin()
+        seed_default_settings()
+    
+    # Start background email alert thread (for admin notifications)
+    if app.config.get('EMAIL_ENABLED', False):
+        start_background_alerts(app)
     
     return app
 
@@ -60,6 +67,13 @@ def create_default_admin():
         db.session.commit()
         print("Default admin user created: username='admin', password='admin'")
         print("IMPORTANT: Change the admin password immediately!")
+
+def seed_default_settings():
+    """Seed default system settings"""
+    if not SystemSettings.get('selling_price_per_bundle'):
+        SystemSettings.set('selling_price_per_bundle', '25', 
+                          'Selling price per bundle of matchboxes in INR')
+        print("Default selling price set to Rs.25 per bundle")
 
 def seed_database():
     """Seed initial data if database is empty"""
@@ -93,6 +107,40 @@ def seed_database():
             db.session.add_all(seed_recipe)
             db.session.commit()
             print("Database seeded with recipe.")
+
+def start_background_alerts(app):
+    """Start a background thread to send periodic email alerts to admin"""
+    def alert_loop():
+        while True:
+            try:
+                with app.app_context():
+                    # Check for low stock and send alerts
+                    from services import InventoryService
+                    low_stock = InventoryService.get_low_stock_materials(threshold=20)
+                    
+                    if low_stock:
+                        admin_users = User.query.filter_by(role='admin', is_active=True).all()
+                        admin_emails = [u.email for u in admin_users if u.email and '@' in u.email]
+                        
+                        if admin_emails:
+                            email_service.check_and_send_low_stock_alerts(admin_emails)
+                            print(f"Low stock alerts sent to: {', '.join(admin_emails)}")
+                    
+                    # Send daily summary at end of day (simplified: runs every cycle)
+                    admin_email = app.config.get('ADMIN_EMAIL', '')
+                    if admin_email:
+                        # Just log it - actual email sending happens via EmailService
+                        print(f"Background alert check complete. Admin: {admin_email}")
+                        
+            except Exception as e:
+                print(f"Background alert error: {e}")
+            
+            # Check every 6 hours
+            time.sleep(6 * 60 * 60)
+    
+    thread = threading.Thread(target=alert_loop, daemon=True)
+    thread.start()
+    print("Background email alert thread started")
 
 if __name__ == '__main__':
     # Get environment (default to development)

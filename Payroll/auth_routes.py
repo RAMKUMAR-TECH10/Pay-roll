@@ -36,10 +36,12 @@ def login():
     
     return render_template('auth/login.html')
 
-@auth_bp.route('/register', methods=['GET', 'POST'])
-def register():
-    """User registration"""
-    if current_user.is_authenticated:
+@auth_bp.route('/create-user', methods=['GET', 'POST'])
+@login_required
+def create_user():
+    """Admin creates user accounts (no public registration)"""
+    if not current_user.has_permission('manage_users'):
+        flash('Only admins can create user accounts.', 'danger')
         return redirect(url_for('main.dashboard'))
     
     if request.method == 'POST':
@@ -48,38 +50,37 @@ def register():
         password = request.form.get('password')
         confirm_password = request.form.get('confirm_password')
         full_name = request.form.get('full_name')
+        role = request.form.get('role', 'operator')
         
         # Validation
         if not username or not email or not password:
             flash('All fields are required.', 'danger')
-            return redirect(url_for('auth.register'))
+            return redirect(url_for('auth.create_user'))
         
         if password != confirm_password:
             flash('Passwords do not match.', 'danger')
-            return redirect(url_for('auth.register'))
+            return redirect(url_for('auth.create_user'))
         
         if len(password) < 6:
             flash('Password must be at least 6 characters long.', 'danger')
-            return redirect(url_for('auth.register'))
+            return redirect(url_for('auth.create_user'))
+        
+        # Only allow operator and viewer roles (not admin)
+        if role not in ['operator', 'viewer']:
+            role = 'operator'
         
         # Check if user exists
         if User.query.filter_by(username=username).first():
             flash('Username already exists.', 'danger')
-            return redirect(url_for('auth.register'))
+            return redirect(url_for('auth.create_user'))
         
         if User.query.filter_by(email=email).first():
             flash('Email already registered.', 'danger')
-            return redirect(url_for('auth.register'))
+            return redirect(url_for('auth.create_user'))
         
         # Create user
-        user = User(username=username, email=email, full_name=full_name)
+        user = User(username=username, email=email, full_name=full_name, role=role)
         user.set_password(password)
-        
-        # First user is admin
-        if User.query.count() == 0:
-            user.role = 'admin'
-        else:
-            user.role = 'operator'
         
         db.session.add(user)
         db.session.commit()
@@ -89,10 +90,10 @@ def register():
         db.session.add(prefs)
         db.session.commit()
         
-        flash('Registration successful! Please log in.', 'success')
-        return redirect(url_for('auth.login'))
+        flash(f'User "{username}" created successfully as {role}!', 'success')
+        return redirect(url_for('auth.users'))
     
-    return render_template('auth/register.html')
+    return render_template('auth/create_user.html')
 
 @auth_bp.route('/logout')
 @login_required

@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
 from models import db, RawMaterial, ProductionLog, MaterialTransaction
-from services import ProductionService, InventoryService, ReportService
+from services import ProductionService, InventoryService, ReportService, ProfitService
 import datetime
 
 bp = Blueprint('main', __name__)
@@ -30,6 +30,11 @@ def dashboard():
         
         # Get low stock alerts
         low_stock_materials = InventoryService.get_low_stock_materials()
+        
+        # Get profit overview for admin
+        profit_overview = None
+        if current_user.role == 'admin':
+            profit_overview = ProfitService.get_overview()
 
     except Exception as e:
         print(f"Error loading dashboard: {e}")
@@ -37,12 +42,14 @@ def dashboard():
         production_today = 0
         weekly_production = []
         low_stock_materials = []
+        profit_overview = None
     
     return render_template('dashboard.html', 
                          raw_materials=raw_materials,
                          production_today=production_today,
                          weekly_production=weekly_production,
-                         low_stock_materials=low_stock_materials)
+                         low_stock_materials=low_stock_materials,
+                         profit_overview=profit_overview)
 
 @bp.route('/production', methods=['GET', 'POST'])
 @login_required
@@ -319,6 +326,72 @@ def api_stockout_prediction(id):
         return jsonify(prediction)
     else:
         return jsonify({'error': 'Unable to predict stockout'}), 404
+
+# === ADMIN-ONLY: Analytics & Profit Routes ===
+
+@bp.route('/analytics')
+@login_required
+def analytics():
+    """Analytics dashboard with charts (admin only)"""
+    if current_user.role != 'admin':
+        flash('Only admins can access analytics.', 'danger')
+        return redirect(url_for('main.dashboard'))
+    
+    overview = ProfitService.get_overview()
+    return render_template('analytics.html', overview=overview)
+
+@bp.route('/analytics/settings', methods=['POST'])
+@login_required
+def analytics_settings():
+    """Update analytics settings like selling price (admin only)"""
+    if current_user.role != 'admin':
+        flash('Only admins can change settings.', 'danger')
+        return redirect(url_for('main.dashboard'))
+    
+    selling_price = request.form.get('selling_price', type=float)
+    if selling_price and selling_price > 0:
+        ProfitService.set_selling_price(selling_price)
+        flash(f'Selling price updated to Rs.{selling_price} per bundle.', 'success')
+    else:
+        flash('Invalid selling price.', 'danger')
+    
+    return redirect(url_for('main.analytics'))
+
+@bp.route('/api/analytics/daily')
+@login_required
+def api_analytics_daily():
+    """Daily analytics data (admin only)"""
+    if current_user.role != 'admin':
+        return jsonify({'error': 'Unauthorized'}), 403
+    days = request.args.get('days', 7, type=int)
+    return jsonify(ProfitService.get_daily_analytics(days))
+
+@bp.route('/api/analytics/weekly')
+@login_required
+def api_analytics_weekly():
+    """Weekly analytics data (admin only)"""
+    if current_user.role != 'admin':
+        return jsonify({'error': 'Unauthorized'}), 403
+    weeks = request.args.get('weeks', 12, type=int)
+    return jsonify(ProfitService.get_weekly_analytics(weeks))
+
+@bp.route('/api/analytics/monthly')
+@login_required
+def api_analytics_monthly():
+    """Monthly analytics data (admin only)"""
+    if current_user.role != 'admin':
+        return jsonify({'error': 'Unauthorized'}), 403
+    months = request.args.get('months', 12, type=int)
+    return jsonify(ProfitService.get_monthly_analytics(months))
+
+@bp.route('/api/analytics/yearly')
+@login_required
+def api_analytics_yearly():
+    """Yearly analytics data (admin only)"""
+    if current_user.role != 'admin':
+        return jsonify({'error': 'Unauthorized'}), 403
+    years = request.args.get('years', 3, type=int)
+    return jsonify(ProfitService.get_yearly_analytics(years))
 
 @bp.errorhandler(404)
 def not_found_error(error):

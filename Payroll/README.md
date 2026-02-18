@@ -31,7 +31,7 @@ A comprehensive Flask-based web application for managing matchbox production, ra
 
 1. **Clone or download the project**
    ```bash
-   cd "d:\New folder\Payroll"
+   cd "c:\Mini project\Payroll"
    ```
 
 2. **Create virtual environment**
@@ -60,14 +60,10 @@ A comprehensive Flask-based web application for managing matchbox production, ra
    # Edit .env file with your settings
    ```
 
-    Run the application using the runner script:
-    ```powershell
-    ./run.ps1
-    ```
-    Alternatively, you can run it manually with the virtual environment:
-    ```bash
-    .venv\Scripts\python app.py
-    ```
+6. **Run the application**
+   ```bash
+   python app.py
+   ```
 
 7. **Access the application**
    Open your browser and navigate to: `http://localhost:5000`

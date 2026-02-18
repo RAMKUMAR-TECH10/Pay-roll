@@ -1,5 +1,6 @@
-from models import db, RawMaterial, ProductionLog, MaterialTransaction, Recipe
+from models import db, RawMaterial, ProductionLog, MaterialTransaction, Recipe, SystemSettings
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import func
 import datetime
 
 class ProductionService:
@@ -274,3 +275,230 @@ class ReportService:
             'transaction_count': len(transactions),
             'total_cost': round(total_consumed * material.unit_price, 2) if material else 0
         }
+
+
+class ProfitService:
+    """Service layer for profit and analytics (admin only)"""
+    
+    @staticmethod
+    def get_selling_price():
+        """Get selling price per bundle from settings"""
+        price = SystemSettings.get('selling_price_per_bundle', '25')
+        return float(price)
+    
+    @staticmethod
+    def set_selling_price(price):
+        """Set selling price per bundle"""
+        SystemSettings.set('selling_price_per_bundle', str(price), 
+                          'Selling price per bundle of matchboxes in INR')
+    
+    @staticmethod
+    def get_production_profit(production_log_id):
+        """Calculate profit for a single production run"""
+        log = ProductionLog.query.get(production_log_id)
+        if not log:
+            return None
+        
+        cost = ProductionService.get_production_cost(production_log_id)
+        selling_price = ProfitService.get_selling_price()
+        revenue = log.bundles_produced * selling_price
+        profit = revenue - cost
+        
+        return {
+            'production_id': production_log_id,
+            'bundles': log.bundles_produced,
+            'cost': round(cost, 2),
+            'revenue': round(revenue, 2),
+            'profit': round(profit, 2),
+            'margin': round((profit / revenue * 100), 2) if revenue > 0 else 0
+        }
+    
+    @staticmethod
+    def get_daily_analytics(days=30):
+        """Get daily profit/production analytics for charts"""
+        today = datetime.date.today()
+        data = []
+        
+        selling_price = ProfitService.get_selling_price()
+        
+        for i in range(days - 1, -1, -1):
+            day = today - datetime.timedelta(days=i)
+            
+            logs = ProductionLog.query.filter(
+                ProductionLog.date == day,
+                ProductionLog.is_deleted == False
+            ).all()
+            
+            day_bundles = sum(log.bundles_produced for log in logs)
+            day_cost = sum(ProductionService.get_production_cost(log.id) for log in logs)
+            day_revenue = day_bundles * selling_price
+            day_profit = day_revenue - day_cost
+            
+            data.append({
+                'date': day.isoformat(),
+                'label': day.strftime('%d %b'),
+                'bundles': day_bundles,
+                'cost': round(day_cost, 2),
+                'revenue': round(day_revenue, 2),
+                'profit': round(day_profit, 2)
+            })
+        
+        return data
+    
+    @staticmethod
+    def get_weekly_analytics(weeks=12):
+        """Get weekly aggregated analytics"""
+        today = datetime.date.today()
+        data = []
+        
+        selling_price = ProfitService.get_selling_price()
+        
+        for i in range(weeks - 1, -1, -1):
+            week_end = today - datetime.timedelta(days=i * 7)
+            week_start = week_end - datetime.timedelta(days=6)
+            
+            logs = ProductionLog.query.filter(
+                ProductionLog.date >= week_start,
+                ProductionLog.date <= week_end,
+                ProductionLog.is_deleted == False
+            ).all()
+            
+            week_bundles = sum(log.bundles_produced for log in logs)
+            week_cost = sum(ProductionService.get_production_cost(log.id) for log in logs)
+            week_revenue = week_bundles * selling_price
+            week_profit = week_revenue - week_cost
+            
+            data.append({
+                'label': f"{week_start.strftime('%d %b')} - {week_end.strftime('%d %b')}",
+                'bundles': week_bundles,
+                'cost': round(week_cost, 2),
+                'revenue': round(week_revenue, 2),
+                'profit': round(week_profit, 2)
+            })
+        
+        return data
+    
+    @staticmethod
+    def get_monthly_analytics(months=12):
+        """Get monthly aggregated analytics"""
+        today = datetime.date.today()
+        data = []
+        
+        selling_price = ProfitService.get_selling_price()
+        
+        for i in range(months - 1, -1, -1):
+            month = today.month - i
+            year = today.year
+            while month <= 0:
+                month += 12
+                year -= 1
+            
+            logs = ProductionLog.query.filter(
+                db.extract('month', ProductionLog.date) == month,
+                db.extract('year', ProductionLog.date) == year,
+                ProductionLog.is_deleted == False
+            ).all()
+            
+            month_bundles = sum(log.bundles_produced for log in logs)
+            month_cost = sum(ProductionService.get_production_cost(log.id) for log in logs)
+            month_revenue = month_bundles * selling_price
+            month_profit = month_revenue - month_cost
+            
+            month_name = datetime.date(year, month, 1).strftime('%b %Y')
+            data.append({
+                'label': month_name,
+                'bundles': month_bundles,
+                'cost': round(month_cost, 2),
+                'revenue': round(month_revenue, 2),
+                'profit': round(month_profit, 2)
+            })
+        
+        return data
+    
+    @staticmethod
+    def get_yearly_analytics(years=3):
+        """Get yearly aggregated analytics"""
+        today = datetime.date.today()
+        data = []
+        
+        selling_price = ProfitService.get_selling_price()
+        
+        for i in range(years - 1, -1, -1):
+            year = today.year - i
+            
+            logs = ProductionLog.query.filter(
+                db.extract('year', ProductionLog.date) == year,
+                ProductionLog.is_deleted == False
+            ).all()
+            
+            year_bundles = sum(log.bundles_produced for log in logs)
+            year_cost = sum(ProductionService.get_production_cost(log.id) for log in logs)
+            year_revenue = year_bundles * selling_price
+            year_profit = year_revenue - year_cost
+            
+            data.append({
+                'label': str(year),
+                'bundles': year_bundles,
+                'cost': round(year_cost, 2),
+                'revenue': round(year_revenue, 2),
+                'profit': round(year_profit, 2)
+            })
+        
+        return data
+    
+    @staticmethod
+    def get_overview():
+        """Get overall profit overview for dashboard"""
+        today = datetime.date.today()
+        selling_price = ProfitService.get_selling_price()
+        
+        # Today
+        today_logs = ProductionLog.query.filter(
+            ProductionLog.date == today, ProductionLog.is_deleted == False
+        ).all()
+        today_bundles = sum(l.bundles_produced for l in today_logs)
+        today_cost = sum(ProductionService.get_production_cost(l.id) for l in today_logs)
+        today_revenue = today_bundles * selling_price
+        
+        # This week
+        week_start = today - datetime.timedelta(days=today.weekday())
+        week_logs = ProductionLog.query.filter(
+            ProductionLog.date >= week_start, ProductionLog.date <= today,
+            ProductionLog.is_deleted == False
+        ).all()
+        week_bundles = sum(l.bundles_produced for l in week_logs)
+        week_cost = sum(ProductionService.get_production_cost(l.id) for l in week_logs)
+        week_revenue = week_bundles * selling_price
+        
+        # This month
+        month_start = today.replace(day=1)
+        month_logs = ProductionLog.query.filter(
+            ProductionLog.date >= month_start, ProductionLog.date <= today,
+            ProductionLog.is_deleted == False
+        ).all()
+        month_bundles = sum(l.bundles_produced for l in month_logs)
+        month_cost = sum(ProductionService.get_production_cost(l.id) for l in month_logs)
+        month_revenue = month_bundles * selling_price
+        
+        return {
+            'selling_price': selling_price,
+            'today': {
+                'bundles': today_bundles,
+                'cost': round(today_cost, 2),
+                'revenue': round(today_revenue, 2),
+                'profit': round(today_revenue - today_cost, 2)
+            },
+            'week': {
+                'bundles': week_bundles,
+                'cost': round(week_cost, 2),
+                'revenue': round(week_revenue, 2),
+                'profit': round(week_revenue - week_cost, 2)
+            },
+            'month': {
+                'bundles': month_bundles,
+                'cost': round(month_cost, 2),
+                'revenue': round(month_revenue, 2),
+                'profit': round(month_revenue - month_cost, 2)
+            }
+        }
+
