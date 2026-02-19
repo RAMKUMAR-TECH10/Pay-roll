@@ -10,6 +10,17 @@
         <h3>New Production Run</h3>
         <form method="POST" action="{{ url_for('main.production') }}">
             <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; color: #94a3b8;">Employee (Who made bundles)</label>
+                <select name="employee_id" style="width: 100%; padding: 10px; background: #334155; border: 1px solid #475569; color: white; border-radius: 5px;">
+                    <option value="">-- Select Employee --</option>
+                    {% for emp in employees %}
+                    <option value="{{ emp.id }}">{{ emp.get_full_name() }} - {{ emp.position }}</option>
+                    {% endfor %}
+                </select>
+                <small style="color: #64748b; display: block; margin-top: 5px;">Select the employee who completed this production.</small>
+            </div>
+
+            <div style="margin-bottom: 15px;">
                 <label style="display: block; margin-bottom: 5px; color: #94a3b8;">Bundles Produced</label>
                 <input type="number" name="quantity" min="1" required
                     style="width: 100%; padding: 10px; background: #334155; border: 1px solid #475569; color: white; border-radius: 5px;">
@@ -45,37 +56,47 @@
                 <thead>
                     <tr>
                         <th>Date</th>
+                        <th>Employee</th>
                         <th>Bundles</th>
                         <th>Notes</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for log in logs %}
-                    <tr>
-                        <td>{{ log.date }}</td>
-                        <td>{{ log.bundles_produced }}</td>
-                        <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                            {{ log.notes or '-' }}
-                        </td>
-                        <td>
-                            <form method="POST" action="{{ url_for('main.undo_production', id=log.id) }}"
-                                style="display: inline;">
-                                <button type="submit" class="btn"
-                                    style="padding: 5px 10px; font-size: 0.8rem; background: rgba(245, 158, 11, 0.1); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.2);"
-                                    onclick="return confirm('Undo this production? Materials will be restored.')">Undo</button>
-                            </form>
-                            <a href="{{ url_for('main.delete_production', id=log.id) }}" class="btn btn-danger"
-                                style="padding: 5px 10px; font-size: 0.8rem;"
-                                onclick="return confirm('Delete this production log?')">Delete</a>
-                        </td>
-                    </tr>
+                    {% if logs %}
+                        {% for log in logs %}
+                        <tr>
+                            <td>{{ log.date }}</td>
+                            <td>
+                                {% if log.employee %}
+                                    {{ log.employee.get_full_name() }}
+                                {% else %}
+                                    <span style="color: #8b949e;">-</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ log.bundles_produced }}</td>
+                            <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                {{ log.notes or '-' }}
+                            </td>
+                            <td>
+                                <form method="POST" action="{{ url_for('main.undo_production', id=log.id) }}"
+                                    style="display: inline;">
+                                    <button type="submit" class="btn"
+                                        style="padding: 5px 10px; font-size: 0.8rem; background: rgba(245, 158, 11, 0.1); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.2);"
+                                        onclick="return confirm('Undo this production? Materials will be restored.')">Undo</button>
+                                </form>
+                                <a href="{{ url_for('main.delete_production', id=log.id) }}" class="btn btn-danger"
+                                    style="padding: 5px 10px; font-size: 0.8rem;"
+                                    onclick="return confirm('Delete this production log?')">Delete</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
                     {% else %}
                     <tr>
-                        <td colspan="4" style="text-align: center; color: #94a3b8; padding: 30px;">No production logs
+                        <td colspan="5" style="text-align: center; color: #94a3b8; padding: 30px;">No production logs
                             yet.</td>
                     </tr>
-                    {% endfor %}
+                    {% endif %}
                 </tbody>
             </table>
         </div>
@@ -86,7 +107,7 @@
             <div style="display: inline-flex; gap: 5px;">
                 {% if pagination.has_prev %}
                 <a href="{{ url_for('main.production', page=pagination.prev_num) }}" class="btn"
-                    style="padding: 5px 10px;">Previous</a>
+                    style="padding: 5px 10px;">← Previous</a>
                 {% endif %}
 
                 <span style="padding: 5px 15px; color: #94a3b8;">
@@ -95,7 +116,7 @@
 
                 {% if pagination.has_next %}
                 <a href="{{ url_for('main.production', page=pagination.next_num) }}" class="btn"
-                    style="padding: 5px 10px;">Next</a>
+                    style="padding: 5px 10px;">Next →</a>
                 {% endif %}
             </div>
         </div>

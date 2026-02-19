@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
-from models import db, RawMaterial, ProductionLog, MaterialTransaction, Recipe
+from models import db, RawMaterial, ProductionLog, MaterialTransaction, Recipe, Employee
 from services import ProductionService, InventoryService, ReportService, ProfitService
 import datetime
 
@@ -54,20 +54,48 @@ def dashboard():
 @bp.route('/production', methods=['GET', 'POST'])
 @login_required
 def production():
-    """Production logging page"""
+    """Production logging page - Workers create, Supervisors verify"""
     if request.method == 'POST':
         try:
             quantity = int(request.form.get('quantity'))
+            employee_id_str = request.form.get('employee_id', '').strip()
+            supervisor_id_str = request.form.get('supervisor_id', '').strip()
+            employee_id = int(employee_id_str) if employee_id_str else None
+            supervisor_id = int(supervisor_id_str) if supervisor_id_str else None
             notes = request.form.get('notes', '').strip() or None
             
             if quantity <= 0:
                 flash('Quantity must be greater than 0.', 'danger')
                 return redirect(url_for('main.production'))
             
-            # Use service layer for production
+            # Validate that employee is a Worker
+            if not employee_id:
+                flash('Please select a worker.', 'danger')
+                return redirect(url_for('main.production'))
+            
+            worker = Employee.query.get(employee_id)
+            if not worker or worker.position != 'Worker':
+                flash('Only Workers can log production. Please select a Worker.', 'danger')
+                return redirect(url_for('main.production'))
+            
+            # Optional: Validate supervisor is actually a Supervisor (if provided)
+            if supervisor_id:
+                supervisor = Employee.query.get(supervisor_id)
+                if not supervisor or supervisor.position != 'Supervisor':
+                    flash('Supervisor must have Supervisor position.', 'danger')
+                    return redirect(url_for('main.production'))
+            
+            # Use service layer for production (only deducts materials for workers)
             success, error_data, production_log = ProductionService.create_production(quantity, notes)
             
             if success:
+                # Assign worker and supervisor
+                if production_log:
+                    production_log.employee_id = employee_id
+                    production_log.supervisor_id = supervisor_id
+                    db.session.commit()
+                flash(f'Successfully logged {quantity} bundles by {worker.get_full_name()}!', 'success')
+                    db.session.commit()
                 flash(f'Successfully produced {quantity} bundles!', 'success')
             else:
                 if error_data and isinstance(error_data, list):
@@ -79,36 +107,50 @@ def production():
                 else:
                     flash('Production failed due to an error.', 'danger')
                     
-        except ValueError:
-            flash('Invalid quantity.', 'danger')
+        except ValueError as ve:
+            flash('Invalid input. Please check quantity and employee selection.', 'danger')
         except Exception as e:
+            db.session.rollback()
             flash(f'Error: {str(e)}', 'danger')
         
         return redirect(url_for('main.production'))
     
     # GET request - show form and recent logs
-    page = request.args.get('page', 1, type=int)
-    per_page = 10
-    
-    pagination = ProductionLog.query.filter_by(is_deleted=False)\
-        .order_by(ProductionLog.date.desc(), ProductionLog.id.desc())\
-        .paginate(page=page, per_page=per_page, error_out=False)
-    
-    # Fetch active recipe for display
-    recipe = ProductionService.get_active_recipe()
-    recipe_display = []
-    for material_name, qty in recipe.items():
-        material = RawMaterial.query.filter_by(name=material_name).first()
-        recipe_display.append({
-            'name': material_name,
-            'quantity': qty,
-            'unit': material.unit if material else ''
-        })
-    
-    return render_template('production.html', 
-                         logs=pagination.items,
-                         pagination=pagination,
-                         recipe=recipe_display)
+    try:
+        page = request.args.get('page', 1, type=int)
+        per_page = 10
+        
+        pagination = ProductionLog.query.filter_by(is_deleted=False)\
+            .order_by(ProductionLog.date.desc(), ProductionLog.id.desc())\
+            .paginate(page=page, per_page=per_page, error_out=False)
+        
+        # Fetch active recipe for display
+        recipe = ProductionService.get_active_recipe()
+        recipe_display = []
+        for material_name, qty in recipe.items():
+            material = RawMaterial.query.filter_by(name=material_name).first()
+            if material:
+                recipe_display.append({
+                    'name': material_name,
+                    'quantity': qty,
+                    'unit': material.unit
+                })
+        
+        # Get active employees
+        employees = Employee.query.filter_by(status='active').order_by(Employee.last_name).all()
+        
+        return render_template('production.html', 
+                             logs=pagination.items,
+                             pagination=pagination,
+                             recipe=recipe_display,
+                             employees=employees)
+    except Exception as e:
+        flash(f'Error loading production page: {str(e)}', 'danger')
+        return render_template('production.html', 
+                             logs=[],
+                             pagination=None,
+                             recipe=[],
+                             employees=[])
 
 @bp.route('/production/undo/<int:id>', methods=['POST'])
 @login_required
@@ -172,33 +214,60 @@ def inventory():
 @login_required
 def reports():
     """Reports and analytics page"""
-    # Get date range from query params
-    start_date_str = request.args.get('start_date')
-    end_date_str = request.args.get('end_date')
-    
-    start_date = datetime.datetime.strptime(start_date_str, '%Y-%m-%d').date() if start_date_str else None
-    end_date = datetime.datetime.strptime(end_date_str, '%Y-%m-%d').date() if end_date_str else None
-    
-    # Default to last 30 days if no dates provided
-    if not start_date and not end_date:
+    try:
+        # Get date range from query params
+        start_date_str = request.args.get('start_date')
+        end_date_str = request.args.get('end_date')
+        
+        start_date = None
+        end_date = None
+        
+        try:
+            start_date = datetime.datetime.strptime(start_date_str, '%Y-%m-%d').date() if start_date_str else None
+            end_date = datetime.datetime.strptime(end_date_str, '%Y-%m-%d').date() if end_date_str else None
+        except ValueError:
+            # If date parsing fails, use default
+            pass
+        
+        # Default to last 30 days if no dates provided
+        if not start_date and not end_date:
+            end_date = datetime.date.today()
+            start_date = end_date - datetime.timedelta(days=30)
+        
+        production_summary = ReportService.get_production_summary(start_date, end_date)
+        
+        # Get material consumption for all materials
+        materials = RawMaterial.query.all()
+        material_consumption = []
+        for material in materials:
+            consumption = ReportService.get_material_consumption(material.id, start_date, end_date)
+            if consumption['total_consumed'] > 0:
+                material_consumption.append(consumption)
+        
+        return render_template('reports.html',
+                             production_summary=production_summary,
+                             material_consumption=material_consumption,
+                             start_date=start_date,
+                             end_date=end_date)
+    except Exception as e:
+        flash(f'Error loading reports: {str(e)}', 'danger')
+        # Return default report for last 30 days
         end_date = datetime.date.today()
         start_date = end_date - datetime.timedelta(days=30)
-    
-    production_summary = ReportService.get_production_summary(start_date, end_date)
-    
-    # Get material consumption for all materials
-    materials = RawMaterial.query.all()
-    material_consumption = []
-    for material in materials:
-        consumption = ReportService.get_material_consumption(material.id, start_date, end_date)
-        if consumption['total_consumed'] > 0:
-            material_consumption.append(consumption)
-    
-    return render_template('reports.html',
-                         production_summary=production_summary,
-                         material_consumption=material_consumption,
-                         start_date=start_date,
-                         end_date=end_date)
+        
+        production_summary = ReportService.get_production_summary(start_date, end_date)
+        materials = RawMaterial.query.all()
+        material_consumption = []
+        for material in materials:
+            consumption = ReportService.get_material_consumption(material.id, start_date, end_date)
+            if consumption['total_consumed'] > 0:
+                material_consumption.append(consumption)
+        
+        return render_template('reports.html',
+                             production_summary=production_summary,
+                             material_consumption=material_consumption,
+                             start_date=start_date,
+                             end_date=end_date)
 
 # Export Routes
 
