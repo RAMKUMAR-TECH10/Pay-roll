@@ -28,29 +28,10 @@
             <a href="{{ url_for('main.reports') }}"
                 class="nav-link {% if request.endpoint == 'main.reports' %}active{% endif %}">Reports</a>
 
-            <!-- Employee Module -->
-            <div style="margin-top: 25px; border-top: 1px solid #334155; padding-top: 20px;">
-                <div style="color: #94a3b8; font-size: 0.8rem; padding: 0 15px 10px; text-transform: uppercase; letter-spacing: 0.05em;">
-                    👥 Human Resources
-                </div>
-                <a href="{{ url_for('employee.list_employees') }}"
-                    class="nav-link {% if request.endpoint == 'employee.list_employees' %}active{% endif %}">Employees</a>
-                <a href="{{ url_for('employee.attendance_list') }}"
-                    class="nav-link {% if request.endpoint == 'employee.attendance_list' %}active{% endif %}">Attendance</a>
-                <a href="{{ url_for('employee.salary_list') }}"
-                    class="nav-link {% if request.endpoint == 'employee.salary_list' %}active{% endif %}">Salary</a>
-                <a href="{{ url_for('employee.attendance_report') }}"
-                    class="nav-link {% if request.endpoint == 'employee.attendance_report' %}active{% endif %}">Attendance Report</a>
-                <a href="{{ url_for('employee.payroll_report') }}"
-                    class="nav-link {% if request.endpoint == 'employee.payroll_report' %}active{% endif %}">Payroll Report</a>
-            </div>
-
             {% if current_user.is_authenticated and current_user.role == 'admin' %}
-            <div style="margin-top: 25px; border-top: 1px solid #334155; padding-top: 20px;">
-                <a href="{{ url_for('main.analytics') }}"
-                    class="nav-link {% if request.endpoint == 'main.analytics' %}active{% endif %}"
-                    style="color: #f59e0b;">📊 Analytics & Profit</a>
-            </div>
+            <a href="{{ url_for('main.analytics') }}"
+                class="nav-link {% if request.endpoint == 'main.analytics' %}active{% endif %}"
+                style="color: #f59e0b;">📊 Analytics & Profit</a>
             {% endif %}
 
             <div style="margin-top: 30px; border-top: 1px solid #334155; padding-top: 20px;">

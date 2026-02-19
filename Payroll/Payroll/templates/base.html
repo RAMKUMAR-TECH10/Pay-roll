@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matchbox Payroll | {% block title %}Dashboard{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <!-- Google Fonts for Premium Feel -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chart.js for Visuals -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <div class="sidebar">
+        <div class="logo">🔥 MatchboxOS</div>
+
+        <nav>
+            <a href="{{ url_for('main.dashboard') }}"
+                class="nav-link {% if request.endpoint == 'main.dashboard' %}active{% endif %}">Dashboard</a>
+            <a href="{{ url_for('main.production') }}"
+                class="nav-link {% if request.endpoint == 'main.production' %}active{% endif %}">Production</a>
+            <a href="{{ url_for('main.inventory') }}"
+                class="nav-link {% if request.endpoint == 'main.inventory' %}active{% endif %}">Inventory</a>
+            <a href="{{ url_for('main.reports') }}"
+                class="nav-link {% if request.endpoint == 'main.reports' %}active{% endif %}">Reports</a>
+
+            <!-- Employee Module -->
+            <div style="margin-top: 25px; border-top: 1px solid #334155; padding-top: 20px;">
+                <div style="color: #94a3b8; font-size: 0.8rem; padding: 0 15px 10px; text-transform: uppercase; letter-spacing: 0.05em;">
+                    👥 Human Resources
+                </div>
+                <a href="{{ url_for('employee.list_employees') }}"
+                    class="nav-link {% if request.endpoint == 'employee.list_employees' %}active{% endif %}">Employees</a>
+                <a href="{{ url_for('employee.attendance_list') }}"
+                    class="nav-link {% if request.endpoint == 'employee.attendance_list' %}active{% endif %}">Attendance</a>
+                <a href="{{ url_for('employee.salary_list') }}"
+                    class="nav-link {% if request.endpoint == 'employee.salary_list' %}active{% endif %}">Salary</a>
+                <a href="{{ url_for('employee.attendance_report') }}"
+                    class="nav-link {% if request.endpoint == 'employee.attendance_report' %}active{% endif %}">Attendance Report</a>
+                <a href="{{ url_for('employee.payroll_report') }}"
+                    class="nav-link {% if request.endpoint == 'employee.payroll_report' %}active{% endif %}">Payroll Report</a>
+            </div>
+
+            {% if current_user.is_authenticated and current_user.role == 'admin' %}
+            <div style="margin-top: 25px; border-top: 1px solid #334155; padding-top: 20px;">
+                <a href="{{ url_for('main.analytics') }}"
+                    class="nav-link {% if request.endpoint == 'main.analytics' %}active{% endif %}"
+                    style="color: #f59e0b;">📊 Analytics & Profit</a>
+            </div>
+            {% endif %}
+
+            <div style="margin-top: 30px; border-top: 1px solid #334155; padding-top: 20px;">
+                {% if current_user.is_authenticated %}
+                <div
+                    style="color: #94a3b8; font-size: 0.8rem; padding: 0 15px 10px; text-transform: uppercase; letter-spacing: 0.05em;">
+                    {{ current_user.username }} ({{ current_user.role }})
+                </div>
+
+                <a href="{{ url_for('auth.profile') }}"
+                    class="nav-link {% if request.endpoint == 'auth.profile' %}active{% endif %}">Profile</a>
+                <a href="{{ url_for('auth.preferences') }}"
+                    class="nav-link {% if request.endpoint == 'auth.preferences' %}active{% endif %}">Preferences</a>
+
+                {% if current_user.has_permission('manage_users') %}
+                <a href="{{ url_for('auth.users') }}"
+                    class="nav-link {% if request.endpoint == 'auth.users' %}active{% endif %}">Manage Users</a>
+                {% endif %}
+
+                <a href="{{ url_for('auth.logout') }}" class="nav-link" style="color: #ef4444;">Logout</a>
+                {% else %}
+                <a href="{{ url_for('auth.login') }}"
+                    class="nav-link {% if request.endpoint == 'auth.login' %}active{% endif %}">Login</a>
+                {% endif %}
+            </div>
+        </nav>
+    </div>
+
+    <div class="main-content">
+        <header>
+            <h1>{% block header %}Dashboard{% endblock %}</h1>
+            <div class="user-profile">
+                {% if current_user.is_authenticated %}
+                    {{ current_user.full_name or current_user.username }} ({{ current_user.role|capitalize }})
+                {% else %}
+                    Guest
+                {% endif %}
+            </div>
+        </header>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="flashes">
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </div>
+</body>
+
+</html>
