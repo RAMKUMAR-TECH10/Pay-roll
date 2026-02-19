@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Employee - {{ employee.get_full_name() }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h4 class="mb-0"><i class="fas fa-edit"></i> Edit Employee: {{ employee.employee_id }}</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" class="needs-validation">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="first_name" class="form-label">First Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="first_name" name="first_name" value="{{ employee.first_name }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="last_name" class="form-label">Last Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="last_name" name="last_name" value="{{ employee.last_name }}" required>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="email" class="form-label">Email Address</label>
+                                <input type="email" class="form-control" id="email" name="email" value="{{ employee.email or '' }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="phone" class="form-label">Phone Number</label>
+                                <input type="tel" class="form-control" id="phone" name="phone" value="{{ employee.phone or '' }}">
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="department" class="form-label">Department <span class="text-danger">*</span></label>
+                                <select class="form-select" id="department" name="department" required>
+                                    <option value="">-- Select Department --</option>
+                                    <option value="Production" {% if employee.department == 'Production' %}selected{% endif %}>Production</option>
+                                    <option value="Quality" {% if employee.department == 'Quality' %}selected{% endif %}>Quality Control</option>
+                                    <option value="Packaging" {% if employee.department == 'Packaging' %}selected{% endif %}>Packaging</option>
+                                    <option value="HR" {% if employee.department == 'HR' %}selected{% endif %}>Human Resources</option>
+                                    <option value="Finance" {% if employee.department == 'Finance' %}selected{% endif %}>Finance</option>
+                                    <option value="Management" {% if employee.department == 'Management' %}selected{% endif %}>Management</option>
+                                    <option value="Other" {% if employee.department == 'Other' %}selected{% endif %}>Other</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="position" class="form-label">Position <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="position" name="position" value="{{ employee.position }}" required>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="hire_date" class="form-label">Hire Date <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="hire_date" name="hire_date" value="{{ employee.hire_date.strftime('%Y-%m-%d') }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="base_salary" class="form-label">Base Salary <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text">₹</span>
+                                    <input type="number" class="form-control" id="base_salary" name="base_salary" step="0.01" min="0" value="{{ employee.base_salary }}" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="employment_type" class="form-label">Employment Type</label>
+                                <select class="form-select" id="employment_type" name="employment_type">
+                                    <option value="permanent" {% if employee.employment_type == 'permanent' %}selected{% endif %}>Permanent</option>
+                                    <option value="contract" {% if employee.employment_type == 'contract' %}selected{% endif %}>Contract</option>
+                                    <option value="temporary" {% if employee.employment_type == 'temporary' %}selected{% endif %}>Temporary</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="status" class="form-label">Status</label>
+                                <select class="form-select" id="status" name="status">
+                                    <option value="active" {% if employee.status == 'active' %}selected{% endif %}>Active</option>
+                                    <option value="inactive" {% if employee.status == 'inactive' %}selected{% endif %}>Inactive</option>
+                                    <option value="terminated" {% if employee.status == 'terminated' %}selected{% endif %}>Terminated</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="address" class="form-label">Address</label>
+                            <textarea class="form-control" id="address" name="address" rows="2">{{ employee.address or '' }}</textarea>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <strong>Employee ID:</strong> {{ employee.employee_id }}<br>
+                            <strong>Created:</strong> {{ employee.created_at.strftime('%d %B %Y') }}
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save"></i> Update Employee
+                            </button>
+                            <a href="{{ url_for('employee.view_employee', emp_id=employee.id) }}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -4,6 +4,7 @@ from models import db
 import datetime
 
 class User(UserMixin, db.Model):
+
     """User model for authentication"""
     __tablename__ = 'user'
     

@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+
+{% block title %}Attendance Report{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Attendance Report</h1>
+    </div>
+
+    <!-- Filter -->
+    <div class="card mb-4 border-0 shadow-sm">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-4">
+                    <label for="from_date" class="form-label fw-600" style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: #555;">
+                        <i class="fas fa-calendar"></i> From Date
+                    </label>
+                    <input type="date" class="form-control form-control-lg" id="from_date" name="from_date" value="{{ from_date }}">
+                </div>
+                <div class="col-md-4">
+                    <label for="to_date" class="form-label fw-600" style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: #555;">
+                        <i class="fas fa-calendar"></i> To Date
+                    </label>
+                    <input type="date" class="form-control form-control-lg" id="to_date" name="to_date" value="{{ to_date }}">
+                </div>
+                <div class="col-md-4">
+                    <label>&nbsp;</label>
+                    <button type="submit" class="btn btn-primary btn-lg w-100">
+                        <i class="fas fa-chart-bar"></i> Generate Report
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Report -->
+    {% if employee_attendance %}
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h6 class="card-title">Total Employees</h6>
+                    <h3>{{ employee_attendance|length }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h6 class="card-title">Total Records</h6>
+                    <h3>
+                        {% set total = 0 %}
+                        {% for emp_id, data in employee_attendance.items() %}
+                            {% set total = total + (data.records|length) %}
+                        {% endfor %}
+                        {{ total }}
+                    </h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h6 class="card-title">Average Hours</h6>
+                    <h3>
+                        {% set total_hours = 0 %}
+                        {% set total_count = 0 %}
+                        {% for emp_id, data in employee_attendance.items() %}
+                            {% set total_hours = total_hours + data.total_hours %}
+                            {% set total_count = total_count + (data.records|length) %}
+                        {% endfor %}
+                        {{ "%.1f"|format(total_hours / total_count if total_count > 0 else 0) }}
+                    </h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Employee Details -->
+    {% for emp_id, data in employee_attendance.items() %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">{{ data.employee.get_full_name() }} ({{ data.employee.employee_id }})</h5>
+        </div>
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <strong>Department:</strong> {{ data.employee.department }}
+                </div>
+                <div class="col-md-3">
+                    <strong>Position:</strong> {{ data.employee.position }}
+                </div>
+                <div class="col-md-3">
+                    <strong>Total Records:</strong> {{ data.records|length }}
+                </div>
+                <div class="col-md-3">
+                    <strong>Total Hours:</strong> {{ "%.2f"|format(data.total_hours) }}
+                </div>
+            </div>
+
+            <!-- Stats -->
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body text-center">
+                            <h5>{{ data.present }}</h5>
+                            <small>Present</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-dark">
+                        <div class="card-body text-center">
+                            <h5>{{ data.late }}</h5>
+                            <small>Late</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-danger text-white">
+                        <div class="card-body text-center">
+                            <h5>{{ data.absent }}</h5>
+                            <small>Absent</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body text-center">
+                            <h5>{{ "%.1f"|format((data.present / (data.records|length) * 100) if data.records|length > 0 else 0) }}%</h5>
+                            <small>Attendance %</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Details Table -->
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Clock In</th>
+                            <th>Clock Out</th>
+                            <th>Hours</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in data.records %}
+                        <tr>
+                            <td>{{ record.date.strftime('%d %b %Y') }}</td>
+                            <td>
+                                <span class="badge {% if record.status == 'present' %}bg-success{% elif record.status == 'late' %}bg-warning{% elif record.status == 'absent' %}bg-danger{% else %}bg-info{% endif %}">
+                                    {{ record.status.capitalize() }}
+                                </span>
+                            </td>
+                            <td>{{ record.clock_in.strftime('%H:%M') if record.clock_in else '-' }}</td>
+                            <td>{{ record.clock_out.strftime('%H:%M') if record.clock_out else '-' }}</td>
+                            <td>{{ "%.2f"|format(record.hours_worked) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="card">
+        <div class="card-body text-center text-muted py-4">
+            <p><i class="fas fa-info-circle fa-3x mb-3"></i></p>
+            <p>No attendance records found for the selected date range.</p>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    .card {
+        border-radius: 0.5rem;
+    }
+</style>
+{% endblock %}
