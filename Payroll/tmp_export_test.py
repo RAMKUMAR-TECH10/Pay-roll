@@ -1,5 +1,5 @@
 ﻿import sys
-sys.path.insert(0, r"Z:\Mini projects\Payroll")
+sys.path.insert(0, r"Z:\Mini projects\git\Payroll")
 from app import create_app
 app = create_app('default')
 with app.app_context():
