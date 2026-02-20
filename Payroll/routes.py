@@ -95,8 +95,6 @@ def production():
                     production_log.supervisor_id = supervisor_id
                     db.session.commit()
                 flash(f'Successfully logged {quantity} bundles by {worker.get_full_name()}!', 'success')
-                    db.session.commit()
-                flash(f'Successfully produced {quantity} bundles!', 'success')
             else:
                 if error_data and isinstance(error_data, list):
                     missing_info = ', '.join([
