@@ -7,7 +7,7 @@
 <div class="container">
     <div class="card" style="margin-bottom: 30px;">
         <h3>📅 Select Date & Mark Attendance</h3>
-        
+
         <form method="POST" action="{{ url_for('employee.bulk_attendance') }}">
             <div style="margin-bottom: 20px;">
                 <label style="display: block; margin-bottom: 8px; color: var(--text-color); font-weight: 600;">
@@ -22,93 +22,78 @@
                 </small>
             </div>
 
-            <!-- Employees Grid -->
-            <div style="background: var(--card-bg); border-radius: 12px; padding: 20px; margin-top: 20px;">
+            <!-- Employees Table -->
+            <div
+                style="background: var(--card-bg); border-radius: 12px; padding: 20px; margin-top: 20px; overflow-x: auto;">
                 <h4 style="margin-top: 0; color: var(--accent-color); margin-bottom: 20px;">
                     👥 Mark Attendance for {{ employees|length }} Employees
                 </h4>
 
-                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px;">
-                    {% for emp in employees %}
-                    <div style="padding: 15px; background: rgba(88, 166, 255, 0.05); border-radius: 8px; border: 1px solid var(--border-color);">
-                        <!-- Employee Name Header -->
-                        <div style="margin-bottom: 12px;">
-                            <div style="font-weight: 600; color: var(--accent-color); font-size: 1rem;">
-                                {{ emp.get_full_name() }}
-                            </div>
-                            <div style="font-size: 0.85rem; color: #8b949e;">
-                                {{ emp.position }} • {{ emp.department }}
-                            </div>
-                        </div>
-
-                        <!-- Status Selection -->
-                        <div style="display: flex; flex-direction: column; gap: 8px;">
-                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: var(--text-color);">
-                                <input type="radio" name="status_{{ emp.id }}" value="present" 
-                                    {% if existing_attendance.get(emp.id, 'present') == 'present' %}checked{% endif %}
-                                    style="cursor: pointer;">
-                                <span style="display: flex; align-items: center; gap: 5px;">
-                                    <span style="color: var(--success-color); font-weight: 600;">✓ Present</span>
+                <table class="table" style="width: 100%; border-collapse: collapse;">
+                    <thead style="border-bottom: 2px solid var(--border-color);">
+                        <tr>
+                            <th style="padding: 12px; text-align: left; color: #8b949e;">Employee</th>
+                            <th style="padding: 12px; text-align: left; color: #8b949e;">Position/Dept</th>
+                            <th style="padding: 12px; text-align: left; color: #8b949e;">Attendance Status</th>
+                            <th style="padding: 12px; text-align: left; color: #8b949e;">Current Info</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for emp in employees %}
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px; vertical-align: middle;">
+                                <div style="font-weight: 600; color: var(--accent-color);">{{ emp.get_full_name() }}
+                                </div>
+                                <div style="font-size: 0.75rem; color: #8b949e;">{{ emp.employee_id }}</div>
+                            </td>
+                            <td style="padding: 15px; vertical-align: middle;">
+                                <div style="font-size: 0.9rem;">{{ emp.position }}</div>
+                                <div style="font-size: 0.75rem; color: #8b949e;">{{ emp.department }}</div>
+                            </td>
+                            <td style="padding: 15px; vertical-align: middle;">
+                                <select name="status_{{ emp.id }}" class="form-select"
+                                    style="max-width: 200px; padding: 8px; border-radius: 6px; background: #1e293b; color: white; border: 1px solid #334155;">
+                                    <option value="present" {% if existing_attendance.get(emp.id, 'present' )=='present'
+                                        %}selected{% endif %}>✅ Present</option>
+                                    <option value="absent" {% if existing_attendance.get(emp.id)=='absent' %}selected{%
+                                        endif %}>❌ Absent</option>
+                                    <option value="late" {% if existing_attendance.get(emp.id)=='late' %}selected{%
+                                        endif %}>⏰ Late</option>
+                                    <option value="leave" {% if existing_attendance.get(emp.id)=='leave' %}selected{%
+                                        endif %}>🏖 Leave</option>
+                                    <option value="sick" {% if existing_attendance.get(emp.id)=='sick' %}selected{%
+                                        endif %}>🤒 Sick</option>
+                                    <option value="half-day" {% if existing_attendance.get(emp.id)=='half-day'
+                                        %}selected{% endif %}>⏱ Half-Day</option>
+                                </select>
+                            </td>
+                            <td style="padding: 15px; vertical-align: middle;">
+                                {% set last_status = existing_attendance.get(emp.id) %}
+                                {% if last_status %}
+                                <span style="font-size: 0.85rem; padding: 4px 10px; border-radius: 20px; 
+                                        {% if last_status == 'present' %} background: rgba(34, 197, 94, 0.1); color: #22c55e;
+                                        {% elif last_status == 'absent' %} background: rgba(239, 68, 68, 0.1); color: #ef4444;
+                                        {% else %} background: rgba(245, 158, 11, 0.1); color: #f59e0b; {% endif %}">
+                                    Saved: {{ last_status|capitalize }}
                                 </span>
-                            </label>
-
-                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: var(--text-color);">
-                                <input type="radio" name="status_{{ emp.id }}" value="absent"
-                                    {% if existing_attendance.get(emp.id) == 'absent' %}checked{% endif %}
-                                    style="cursor: pointer;">
-                                <span style="display: flex; align-items: center; gap: 5px;">
-                                    <span style="color: var(--danger-color); font-weight: 600;">✗ Absent</span>
-                                </span>
-                            </label>
-
-                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: var(--text-color);">
-                                <input type="radio" name="status_{{ emp.id }}" value="late"
-                                    {% if existing_attendance.get(emp.id) == 'late' %}checked{% endif %}
-                                    style="cursor: pointer;">
-                                <span style="display: flex; align-items: center; gap: 5px;">
-                                    <span style="color: #f59e0b; font-weight: 600;">⏰ Late</span>
-                                </span>
-                            </label>
-
-                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: var(--text-color);">
-                                <input type="radio" name="status_{{ emp.id }}" value="leave"
-                                    {% if existing_attendance.get(emp.id) == 'leave' %}checked{% endif %}
-                                    style="cursor: pointer;">
-                                <span style="display: flex; align-items: center; gap: 5px;">
-                                    <span style="color: #8b949e; font-weight: 600;">🏖 Leave</span>
-                                </span>
-                            </label>
-
-                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: var(--text-color);">
-                                <input type="radio" name="status_{{ emp.id }}" value="sick"
-                                    {% if existing_attendance.get(emp.id) == 'sick' %}checked{% endif %}
-                                    style="cursor: pointer;">
-                                <span style="display: flex; align-items: center; gap: 5px;">
-                                    <span style="color: #f85149; font-weight: 600;">🤒 Sick</span>
-                                </span>
-                            </label>
-
-                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: var(--text-color);">
-                                <input type="radio" name="status_{{ emp.id }}" value="half-day"
-                                    {% if existing_attendance.get(emp.id) == 'half-day' %}checked{% endif %}
-                                    style="cursor: pointer;">
-                                <span style="display: flex; align-items: center; gap: 5px;">
-                                    <span style="color: #58a6ff; font-weight: 600;">⏱ Half-Day</span>
-                                </span>
-                            </label>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
+                                {% else %}
+                                <span style="font-size: 0.85rem; color: #8b949e; font-style: italic;">Not marked</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
 
             <!-- Submit Button -->
             <div style="margin-top: 30px; display: flex; gap: 10px;">
-                <button type="submit" class="btn btn-primary" style="flex: 1; padding: 15px; font-size: 1rem;">
-                    ✅ Confirm & Save Attendance
+                <button type="submit" class="btn btn-primary"
+                    style="flex: 1; padding: 15px; font-size: 1rem; border-radius: 10px;">
+                    ✅ Save All Attendance Records
                 </button>
-                <a href="{{ url_for('employee.attendance_list') }}" class="btn" 
-                    style="padding: 15px; background-color: var(--border-color); color: var(--text-color); border: 1px solid var(--border-color); border-radius: 10px; text-decoration: none; flex: 1; text-align: center;">
+                <a href="{{ url_for('employee.attendance_list') }}" class="btn"
+                    style="padding: 15px; background-color: #334155; color: white; border: none; border-radius: 10px; text-decoration: none; flex: 1; text-align: center;">
                     Cancel
                 </a>
             </div>
@@ -119,8 +104,10 @@
     <div class="card" style="background: rgba(88, 166, 255, 0.05); border: 1px solid rgba(88, 166, 255, 0.2);">
         <h4 style="margin-top: 0; color: var(--accent-color);">📋 How to Use</h4>
         <ol style="color: var(--text-color); line-height: 1.8;">
-            <li><strong>Select a Date:</strong> Use the date field at the top to choose which date to mark attendance for.</li>
-            <li><strong>Mark Status:</strong> For each employee, select their attendance status (Present, Absent, Late, etc.).</li>
+            <li><strong>Select a Date:</strong> Use the date field at the top to choose which date to mark attendance
+                for.</li>
+            <li><strong>Mark Status:</strong> For each employee, select their attendance status (Present, Absent, Late,
+                etc.).</li>
             <li><strong>Save:</strong> Click "Confirm & Save Attendance" to save all entries at once.</li>
             <li><strong>Edit:</strong> You can re-open this page and change statuses until you're happy with them.</li>
         </ol>

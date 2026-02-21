@@ -14,10 +14,12 @@
         <div class="card-body">
             <form method="GET" class="row g-3">
                 <div class="col-md-8">
-                    <label for="month" class="form-label fw-600" style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: #555;">
+                    <label for="month" class="form-label fw-600"
+                        style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: #555;">
                         <i class="fas fa-calendar-alt"></i> Select Month
                     </label>
-                    <input type="month" class="form-control form-control-lg" id="month" name="month" value="{{ month }}">
+                    <input type="month" class="form-control form-control-lg" id="month" name="month"
+                        value="{{ month }}">
                 </div>
                 <div class="col-md-4">
                     <label>&nbsp;</label>
@@ -121,49 +123,54 @@
                         <th>Deductions</th>
                         <th>Tax</th>
                         <th>Net Salary</th>
+                        <th>Paid</th>
+                        <th>Pending</th>
                         <th>Status</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% if salary_records %}
-                        {% for salary in salary_records %}
-                        <tr>
-                            <td><strong>{{ salary.employee.employee_id }}</strong></td>
-                            <td>{{ salary.employee.get_full_name() }}</td>
-                            <td>{{ salary.employee.department }}</td>
-                            <td>₹ {{ "%.2f"|format(salary.gross_salary) }}</td>
-                            <td>
-                                {% if salary.bonus > 0 %}
-                                <span class="text-success">₹ {{ "%.2f"|format(salary.bonus) }}</span>
-                                {% else %}
-                                <span class="text-muted">-</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if salary.deductions > 0 %}
-                                <span class="text-warning">₹ {{ "%.2f"|format(salary.deductions) }}</span>
-                                {% else %}
-                                <span class="text-muted">-</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if salary.tax > 0 %}
-                                <span class="text-danger">₹ {{ "%.2f"|format(salary.tax) }}</span>
-                                {% else %}
-                                <span class="text-muted">-</span>
-                                {% endif %}
-                            </td>
-                            <td><strong>₹ {{ "%.2f"|format(salary.net_salary) }}</strong></td>
-                            <td>
-                                <span class="badge {% if salary.payment_status == 'paid' %}bg-success{% elif salary.payment_status == 'pending' %}bg-warning{% else %}bg-info{% endif %}">
-                                    {{ salary.payment_status.capitalize() }}
-                                </span>
-                            </td>
-                        </tr>
-                        {% endfor %}
+                    {% for salary in salary_records %}
+                    <tr>
+                        <td><strong>{{ salary.employee.employee_id }}</strong></td>
+                        <td>{{ salary.employee.get_full_name() }}</td>
+                        <td>{{ salary.employee.department }}</td>
+                        <td>₹ {{ "%.2f"|format(salary.gross_salary) }}</td>
+                        <td>
+                            {% if salary.bonus > 0 %}
+                            <span class="text-success">₹ {{ "%.2f"|format(salary.bonus) }}</span>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if salary.deductions > 0 %}
+                            <span class="text-warning">₹ {{ "%.2f"|format(salary.deductions) }}</span>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if salary.tax > 0 %}
+                            <span class="text-danger">₹ {{ "%.2f"|format(salary.tax) }}</span>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td><strong>₹ {{ "%.2f"|format(salary.net_salary) }}</strong></td>
+                        <td class="text-success">₹ {{ "%.2f"|format(salary.amount_paid or 0) }}</td>
+                        <td class="text-danger">₹ {{ "%.2f"|format(salary.pending_amount or 0) }}</td>
+                        <td>
+                            <span
+                                class="badge {% if salary.payment_status == 'paid' %}bg-success{% elif salary.payment_status == 'pending' %}bg-warning{% else %}bg-info{% endif %}">
+                                {{ salary.payment_status.capitalize() }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
                     {% else %}
                     <tr>
-                        <td colspan="9" class="text-center text-muted py-4">
+                        <td colspan="11" class="text-center text-muted py-4">
                             No salary records found for {{ month_display }}.
                         </td>
                     </tr>
@@ -177,6 +184,8 @@
                         <th>₹ {{ "%.2f"|format(total_deductions) }}</th>
                         <th>₹ {{ "%.2f"|format(total_tax) }}</th>
                         <th><strong>₹ {{ "%.2f"|format(total_net) }}</strong></th>
+                        <th>₹ {{ "%.2f"|format(total_paid or 0) }}</th>
+                        <th>₹ {{ "%.2f"|format((total_net or 0) - (total_paid or 0)) }}</th>
                         <th></th>
                     </tr>
                 </tfoot>
@@ -194,8 +203,22 @@
 
 <style>
     @media print {
-        .btn-secondary {
-            display: none;
+
+        /* Hide non-print elements */
+        .sidebar,
+        header,
+        .btn,
+        .card:has(form),
+        .nav-link,
+        .flashes {
+            display: none !important;
+        }
+
+        /* Adjust main content for print */
+        .main-content {
+            margin-left: 0 !important;
+            padding: 20px !important;
+            width: 100% !important;
         }
     }
 </style>

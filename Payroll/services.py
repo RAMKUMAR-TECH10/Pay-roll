@@ -283,7 +283,7 @@ class ProfitService:
     @staticmethod
     def get_selling_price():
         """Get selling price per bundle from settings"""
-        price = SystemSettings.get('selling_price_per_bundle', '25')
+        price = SystemSettings.get('selling_price_per_bundle', '90')
         return float(price)
     
     @staticmethod

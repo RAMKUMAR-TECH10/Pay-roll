@@ -9,13 +9,21 @@
         <div>
             <h1>Salary Management</h1>
             <p class="text-muted">
-                Paid: ₹ {{ "%.2f"|format(total_paid) }} | Pending: ₹ {{ "%.2f"|format(total_pending) }}
+                Paid: ₹ {{ "%.2f"|format(total_paid or 0) }} | Pending: ₹ {{ "%.2f"|format(total_pending or 0) }}
             </p>
         </div>
-        {% if current_user.has_permission('create') %}
-        <a href="{{ url_for('employee.payroll_report') }}" class="btn btn-success">
-            <i class="fas fa-chart-pie"></i> Payroll Report
-        </a>
+        {% if current_user.has_permission('edit') %}
+        <div class="d-flex gap-2">
+            <form method="POST" action="{{ url_for('employee.pay_all_pending_salaries') }}"
+                onsubmit="return confirm('Are you sure you want to mark ALL pending salaries as paid?')">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-money-bill-wave"></i> Pay All Pending
+                </button>
+            </form>
+            <a href="{{ url_for('employee.payroll_report') }}" class="btn btn-success">
+                <i class="fas fa-chart-pie"></i> Payroll Report
+            </a>
+        </div>
         {% endif %}
     </div>
 
@@ -24,27 +32,29 @@
         <div class="card-body">
             <form method="GET" class="row g-3">
                 <div class="col-md-4">
-                    <label for="emp_id" class="form-label fw-600" style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: #555;">
+                    <label for="emp_id" class="form-label fw-600"
+                        style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: #555;">
                         <i class="fas fa-user-circle"></i> Employee
                     </label>
                     <select class="form-select form-select-lg" id="emp_id" name="emp_id">
                         <option value="">-- All Employees --</option>
                         {% for emp in employees %}
-                        <option value="{{ emp.id }}" {% if selected_emp_id == emp.id %}selected{% endif %}>
+                        <option value="{{ emp.id }}" {% if selected_emp_id==emp.id %}selected{% endif %}>
                             {{ emp.get_full_name() }} ({{ emp.employee_id }})
                         </option>
                         {% endfor %}
                     </select>
                 </div>
                 <div class="col-md-4">
-                    <label for="status" class="form-label fw-600" style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: #555;">
+                    <label for="status" class="form-label fw-600"
+                        style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: #555;">
                         <i class="fas fa-info-circle"></i> Payment Status
                     </label>
                     <select class="form-select form-select-lg" id="status" name="status">
                         <option value="">-- All Status --</option>
-                        <option value="pending" {% if selected_status == 'pending' %}selected{% endif %}>Pending</option>
-                        <option value="paid" {% if selected_status == 'paid' %}selected{% endif %}>Paid</option>
-                        <option value="partial" {% if selected_status == 'partial' %}selected{% endif %}>Partial</option>
+                        <option value="pending" {% if selected_status=='pending' %}selected{% endif %}>Pending</option>
+                        <option value="paid" {% if selected_status=='paid' %}selected{% endif %}>Paid</option>
+                        <option value="partial" {% if selected_status=='partial' %}selected{% endif %}>Partial</option>
                     </select>
                 </div>
                 <div class="col-md-4">
@@ -70,63 +80,80 @@
                         <th>Deductions</th>
                         <th>Tax</th>
                         <th>Net Salary</th>
+                        <th>Paid</th>
+                        <th>Pending</th>
                         <th>Status</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% if salary.items %}
-                        {% for record in salary.items %}
-                        <tr>
-                            <td><strong>{{ record.month.strftime('%B %Y') }}</strong></td>
-                            <td>
-                                <a href="{{ url_for('employee.view_employee', emp_id=record.employee_id) }}">
-                                    {{ record.employee.get_full_name() }}
-                                </a>
-                            </td>
-                            <td>₹ {{ "%.2f"|format(record.gross_salary) }}</td>
-                            <td>
-                                {% if record.bonus > 0 %}
-                                <span class="text-success">+ ₹ {{ "%.2f"|format(record.bonus) }}</span>
-                                {% else %}
-                                <span class="text-muted">-</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if record.deductions > 0 %}
-                                <span class="text-warning">- ₹ {{ "%.2f"|format(record.deductions) }}</span>
-                                {% else %}
-                                <span class="text-muted">-</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if record.tax > 0 %}
-                                <span class="text-danger">- ₹ {{ "%.2f"|format(record.tax) }}</span>
-                                {% else %}
-                                <span class="text-muted">-</span>
-                                {% endif %}
-                            </td>
-                            <td><strong>₹ {{ "%.2f"|format(record.net_salary) }}</strong></td>
-                            <td>
-                                <span class="badge {% if record.payment_status == 'paid' %}bg-success{% elif record.payment_status == 'pending' %}bg-warning{% else %}bg-info{% endif %}">
-                                    {{ record.payment_status.capitalize() }}
-                                </span>
-                            </td>
-                            <td>
-                                <a href="{{ url_for('employee.view_salary', salary_id=record.id) }}" class="btn btn-sm btn-info" title="View">
+                    {% if salary and salary.items %}
+                    {% for record in salary.items %}
+                    <tr>
+                        <td><strong>{{ record.month.strftime('%B %Y') }}</strong></td>
+                        <td>
+                            <a href="{{ url_for('employee.view_employee', emp_id=record.employee_id) }}">
+                                {{ record.employee.get_full_name() }}
+                            </a>
+                        </td>
+                        <td>₹ {{ "%.2f"|format(record.gross_salary) }}</td>
+                        <td>
+                            {% if record.bonus > 0 %}
+                            <span class="text-success">+ ₹ {{ "%.2f"|format(record.bonus) }}</span>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if record.deductions > 0 %}
+                            <span class="text-warning">- ₹ {{ "%.2f"|format(record.deductions) }}</span>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if record.tax > 0 %}
+                            <span class="text-danger">- ₹ {{ "%.2f"|format(record.tax) }}</span>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td><strong>₹ {{ "%.2f"|format(record.net_salary) }}</strong></td>
+                        <td class="text-success">₹ {{ "%.2f"|format(record.amount_paid or 0) }}</td>
+                        <td class="text-danger"><strong>₹ {{ "%.2f"|format(record.pending_amount or 0) }}</strong></td>
+                        <td>
+                            <span
+                                class="badge {% if record.payment_status == 'paid' %}bg-success{% elif record.payment_status == 'pending' %}bg-warning{% else %}bg-info{% endif %}">
+                                {{ record.payment_status.capitalize() }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="d-flex gap-1">
+                                <a href="{{ url_for('employee.view_salary', salary_id=record.id) }}"
+                                    class="btn btn-sm btn-info text-white" title="View">
                                     <i class="fas fa-eye"></i>
                                 </a>
                                 {% if current_user.has_permission('edit') %}
-                                <a href="{{ url_for('employee.edit_salary', salary_id=record.id) }}" class="btn btn-sm btn-warning" title="Edit">
+                                <a href="{{ url_for('employee.edit_salary', salary_id=record.id) }}"
+                                    class="btn btn-sm btn-warning" title="Edit">
                                     <i class="fas fa-edit"></i>
                                 </a>
+                                {% if record.payment_status != 'paid' %}
+                                <button type="button" class="btn btn-sm btn-success pay-btn"
+                                    data-salary-id="{{ record.id }}"
+                                    data-employee-name="{{ record.employee.get_full_name() }}"
+                                    data-pending-amount="{{ record.pending_amount }}" title="Manual Payment">
+                                    <i class="fas fa-money-bill"></i> Pay
+                                </button>
                                 {% endif %}
-                            </td>
-                        </tr>
-                        {% endfor %}
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
                     {% else %}
                     <tr>
-                        <td colspan="9" class="text-center text-muted py-4">
+                        <td colspan="11" class="text-center text-muted py-4">
                             No salary records found.
                         </td>
                     </tr>
@@ -137,34 +164,119 @@
     </div>
 
     <!-- Pagination -->
-    {% if salary.pages > 1 %}
+    {% if salary is defined and salary.pages is defined and salary.pages > 1 %}
     <nav aria-label="Page navigation" class="mt-4">
         <ul class="pagination justify-content-center">
             {% if salary.has_prev %}
             <li class="page-item">
-                <a class="page-link" href="{{ url_for('employee.salary_list', page=salary.prev_num, emp_id=selected_emp_id, status=selected_status) }}">Previous</a>
+                <a class="page-link"
+                    href="{{ url_for('employee.salary_list', page=salary.prev_num, emp_id=selected_emp_id, status=selected_status) }}">Previous</a>
             </li>
             {% endif %}
 
             {% for page_num in salary.iter_pages() %}
-                {% if page_num %}
-                    {% if page_num == salary.page %}
-                    <li class="page-item active"><span class="page-link">{{ page_num }}</span></li>
-                    {% else %}
-                    <li class="page-item">
-                        <a class="page-link" href="{{ url_for('employee.salary_list', page=page_num, emp_id=selected_emp_id, status=selected_status) }}">{{ page_num }}</a>
-                    </li>
-                    {% endif %}
-                {% endif %}
+            {% if page_num %}
+            {% if page_num == salary.page %}
+            <li class="page-item active"><span class="page-link">{{ page_num }}</span></li>
+            {% else %}
+            <li class="page-item">
+                <a class="page-link"
+                    href="{{ url_for('employee.salary_list', page=page_num, emp_id=selected_emp_id, status=selected_status) }}">{{
+                    page_num }}</a>
+            </li>
+            {% endif %}
+            {% endif %}
             {% endfor %}
 
             {% if salary.has_next %}
             <li class="page-item">
-                <a class="page-link" href="{{ url_for('employee.salary_list', page=salary.next_num, emp_id=selected_emp_id, status=selected_status) }}">Next</a>
+                <a class="page-link"
+                    href="{{ url_for('employee.salary_list', page=salary.next_num, emp_id=selected_emp_id, status=selected_status) }}">Next</a>
             </li>
             {% endif %}
         </ul>
     </nav>
     {% endif %}
 </div>
+
+<!-- Manual Payment Modal -->
+<div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="paymentForm" method="POST" action="">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="paymentModalLabel">Process Payment</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Processing payment for: <strong id="modalEmployeeName"></strong></p>
+                    <div class="mb-3">
+                        <label for="amount" class="form-label">Amount to Pay (₹)</label>
+                        <input type="number" step="0.01" class="form-control form-control-lg" id="paymentAmount"
+                            name="amount" required>
+                        <div class="form-text text-primary">Pending Amount: ₹<span id="modalPendingAmount"></span></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">Confirm Payment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        console.log("Salary List JS Loaded");
+        const payButtons = document.querySelectorAll('.pay-btn');
+        const paymentForm = document.getElementById('paymentForm');
+        const modalEmployeeName = document.getElementById('modalEmployeeName');
+        const modalPendingAmount = document.getElementById('modalPendingAmount');
+        const paymentAmountInput = document.getElementById('paymentAmount');
+
+        if (!payButtons.length) console.log("No pay buttons found on page.");
+
+        payButtons.forEach(button => {
+            button.addEventListener('click', function () {
+                const salaryId = this.getAttribute('data-salary-id');
+                const employeeName = this.getAttribute('data-employee-name');
+                const pendingAmount = parseFloat(this.getAttribute('data-pending-amount')) || 0;
+
+                console.log(`Pay button clicked for Salary ID: ${salaryId}, Emp: ${employeeName}`);
+
+                if (modalEmployeeName) modalEmployeeName.innerText = employeeName;
+                if (modalPendingAmount) modalPendingAmount.innerText = pendingAmount.toFixed(2);
+                if (paymentAmountInput) {
+                    paymentAmountInput.value = pendingAmount.toFixed(2);
+                    paymentAmountInput.max = pendingAmount;
+                }
+
+                if (paymentForm) {
+                    // Generate base URL and replace placeholder
+                    const baseUrl = "{{ url_for('employee.pay_salary', salary_id=0) }}";
+                    paymentForm.action = baseUrl.replace('0', salaryId);
+                }
+
+                // Show modal using Bootstrap API
+                try {
+                    const modalEl = document.getElementById('paymentModal');
+                    if (modalEl) {
+                        const myModal = new bootstrap.Modal(modalEl);
+                        myModal.show();
+                    }
+                } catch (err) {
+                    console.error("Error opening modal:", err);
+                    // Fallback to simple prompt if Bootstrap fails
+                    const amount = prompt(`Enter amount to pay for ${employeeName} (Pending: ₹${pendingAmount.toFixed(2)}):`, pendingAmount.toFixed(2));
+                    if (amount !== null && !isNaN(parseFloat(amount))) {
+                        const input = paymentForm.querySelector('#paymentAmount') || paymentForm.querySelector('input[name="amount"]');
+                        if (input) input.value = amount;
+                        paymentForm.submit();
+                    }
+                }
+            });
+        });
+    });
+</script>
 {% endblock %}

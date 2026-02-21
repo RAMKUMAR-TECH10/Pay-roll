@@ -9,7 +9,8 @@
             <div class="card">
                 <div class="card-header bg-warning text-dark">
                     <h4 class="mb-0"><i class="fas fa-edit"></i> Edit Salary Record</h4>
-                    <p class="mb-0 small">{{ salary.employee.get_full_name() }} ({{ salary.employee.employee_id }}) - {{ salary.month.strftime('%B %Y') }}</p>
+                    <p class="mb-0 small">{{ salary.employee.get_full_name() }} ({{ salary.employee.employee_id }}) - {{
+                        salary.month.strftime('%B %Y') }}</p>
                 </div>
                 <div class="card-body">
                     <form method="POST" class="needs-validation">
@@ -20,17 +21,21 @@
                             <div class="card-body">
                                 <div class="row mb-3">
                                     <div class="col-md-6">
-                                        <label for="gross_salary" class="form-label">Gross Salary <span class="text-danger">*</span></label>
+                                        <label for="gross_salary" class="form-label">Gross Salary <span
+                                                class="text-danger">*</span></label>
                                         <div class="input-group">
                                             <span class="input-group-text">₹</span>
-                                            <input type="number" class="form-control" id="gross_salary" name="gross_salary" step="0.01" min="0" value="{{ salary.gross_salary }}" required>
+                                            <input type="number" class="form-control" id="gross_salary"
+                                                name="gross_salary" step="0.01" min="0"
+                                                value="{{ salary.gross_salary }}" required>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
                                         <label for="bonus" class="form-label">Bonus </label>
                                         <div class="input-group">
                                             <span class="input-group-text">₹</span>
-                                            <input type="number" class="form-control" id="bonus" name="bonus" step="0.01" min="0" value="{{ salary.bonus }}">
+                                            <input type="number" class="form-control" id="bonus" name="bonus"
+                                                step="0.01" min="0" value="{{ salary.bonus }}">
                                         </div>
                                     </div>
                                 </div>
@@ -40,14 +45,16 @@
                                         <label for="deductions" class="form-label">Deductions </label>
                                         <div class="input-group">
                                             <span class="input-group-text">₹</span>
-                                            <input type="number" class="form-control" id="deductions" name="deductions" step="0.01" min="0" value="{{ salary.deductions }}">
+                                            <input type="number" class="form-control" id="deductions" name="deductions"
+                                                step="0.01" min="0" value="{{ salary.deductions }}">
                                         </div>
                                     </div>
                                     <div class="col-md-6">
                                         <label for="tax" class="form-label">Tax </label>
                                         <div class="input-group">
                                             <span class="input-group-text">₹</span>
-                                            <input type="number" class="form-control" id="tax" name="tax" step="0.01" min="0" value="{{ salary.tax }}">
+                                            <input type="number" class="form-control" id="tax" name="tax" step="0.01"
+                                                min="0" value="{{ salary.tax }}">
                                         </div>
                                     </div>
                                 </div>
@@ -77,27 +84,47 @@
                                     <div class="col-md-6">
                                         <label for="payment_status" class="form-label">Payment Status</label>
                                         <select class="form-select" id="payment_status" name="payment_status">
-                                            <option value="pending" {% if salary.payment_status == 'pending' %}selected{% endif %}>Pending</option>
-                                            <option value="paid" {% if salary.payment_status == 'paid' %}selected{% endif %}>Paid</option>
-                                            <option value="partial" {% if salary.payment_status == 'partial' %}selected{% endif %}>Partial</option>
+                                            <option value="pending" {% if salary.payment_status=='pending' %}selected{%
+                                                endif %}>Pending</option>
+                                            <option value="paid" {% if salary.payment_status=='paid' %}selected{% endif
+                                                %}>Paid</option>
+                                            <option value="partial" {% if salary.payment_status=='partial' %}selected{%
+                                                endif %}>Partial</option>
                                         </select>
                                     </div>
                                     <div class="col-md-6">
                                         <label for="payment_method" class="form-label">Payment Method</label>
                                         <select class="form-select" id="payment_method" name="payment_method">
                                             <option value="">-- Not Specified --</option>
-                                            <option value="bank_transfer" {% if salary.payment_method == 'bank_transfer' %}selected{% endif %}>Bank Transfer</option>
-                                            <option value="cash" {% if salary.payment_method == 'cash' %}selected{% endif %}>Cash</option>
-                                            <option value="check" {% if salary.payment_method == 'check' %}selected{% endif %}>Check</option>
-                                            <option value="other" {% if salary.payment_method == 'other' %}selected{% endif %}>Other</option>
+                                            <option value="bank_transfer" {% if salary.payment_method=='bank_transfer'
+                                                %}selected{% endif %}>Bank Transfer</option>
+                                            <option value="cash" {% if salary.payment_method=='cash' %}selected{% endif
+                                                %}>Cash</option>
+                                            <option value="check" {% if salary.payment_method=='check' %}selected{%
+                                                endif %}>Check</option>
+                                            <option value="other" {% if salary.payment_method=='other' %}selected{%
+                                                endif %}>Other</option>
                                         </select>
                                     </div>
                                 </div>
 
                                 <div class="row mb-3">
                                     <div class="col-md-6">
+                                        <label for="amount_paid" class="form-label">Amount Paid</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">₹</span>
+                                            <input type="number" class="form-control" id="amount_paid"
+                                                name="amount_paid" step="0.01" min="0"
+                                                value="{{ salary.amount_paid or 0 }}">
+                                        </div>
+                                        <div class="form-text">
+                                            Current Net Salary: ₹{{ "%.2f"|format(salary.net_salary) }}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
                                         <label for="payment_date" class="form-label">Payment Date</label>
-                                        <input type="date" class="form-control" id="payment_date" name="payment_date" value="{{ salary.payment_date.strftime('%Y-%m-%d') if salary.payment_date else '' }}">
+                                        <input type="date" class="form-control" id="payment_date" name="payment_date"
+                                            value="{{ salary.payment_date.strftime('%Y-%m-%d') if salary.payment_date else '' }}">
                                     </div>
                                 </div>
                             </div>
@@ -105,14 +132,16 @@
 
                         <div class="mb-3">
                             <label for="notes" class="form-label">Notes</label>
-                            <textarea class="form-control" id="notes" name="notes" rows="2">{{ salary.notes or '' }}</textarea>
+                            <textarea class="form-control" id="notes" name="notes"
+                                rows="2">{{ salary.notes or '' }}</textarea>
                         </div>
 
                         <div class="d-flex gap-2">
                             <button type="submit" class="btn btn-success">
                                 <i class="fas fa-save"></i> Update Salary
                             </button>
-                            <a href="{{ url_for('employee.view_salary', salary_id=salary.id) }}" class="btn btn-secondary">
+                            <a href="{{ url_for('employee.view_salary', salary_id=salary.id) }}"
+                                class="btn btn-secondary">
                                 <i class="fas fa-times"></i> Cancel
                             </a>
                         </div>

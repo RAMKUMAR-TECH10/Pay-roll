@@ -14,16 +14,20 @@
         <div class="card-body">
             <form method="GET" class="row g-3">
                 <div class="col-md-4">
-                    <label for="from_date" class="form-label fw-600" style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: #555;">
+                    <label for="from_date" class="form-label fw-600"
+                        style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: #555;">
                         <i class="fas fa-calendar"></i> From Date
                     </label>
-                    <input type="date" class="form-control form-control-lg" id="from_date" name="from_date" value="{{ from_date }}">
+                    <input type="date" class="form-control form-control-lg" id="from_date" name="from_date"
+                        value="{{ from_date }}">
                 </div>
                 <div class="col-md-4">
-                    <label for="to_date" class="form-label fw-600" style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: #555;">
+                    <label for="to_date" class="form-label fw-600"
+                        style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: #555;">
                         <i class="fas fa-calendar"></i> To Date
                     </label>
-                    <input type="date" class="form-control form-control-lg" id="to_date" name="to_date" value="{{ to_date }}">
+                    <input type="date" class="form-control form-control-lg" id="to_date" name="to_date"
+                        value="{{ to_date }}">
                 </div>
                 <div class="col-md-4">
                     <label>&nbsp;</label>
@@ -53,7 +57,7 @@
                     <h3>
                         {% set total = 0 %}
                         {% for emp_id, data in employee_attendance.items() %}
-                            {% set total = total + (data.records|length) %}
+                        {% set total = total + (data.records|length) %}
                         {% endfor %}
                         {{ total }}
                     </h3>
@@ -68,8 +72,8 @@
                         {% set total_hours = 0 %}
                         {% set total_count = 0 %}
                         {% for emp_id, data in employee_attendance.items() %}
-                            {% set total_hours = total_hours + data.total_hours %}
-                            {% set total_count = total_count + (data.records|length) %}
+                        {% set total_hours = total_hours + data.total_hours %}
+                        {% set total_count = total_count + (data.records|length) %}
                         {% endfor %}
                         {{ "%.1f"|format(total_hours / total_count if total_count > 0 else 0) }}
                     </h3>
@@ -129,7 +133,8 @@
                 <div class="col-md-3">
                     <div class="card bg-info text-white">
                         <div class="card-body text-center">
-                            <h5>{{ "%.1f"|format((data.present / (data.records|length) * 100) if data.records|length > 0 else 0) }}%</h5>
+                            <h5>{{ "%.1f"|format((data.present / (data.records|length) * 100) if data.records|length > 0
+                                else 0) }}%</h5>
                             <small>Attendance %</small>
                         </div>
                     </div>
@@ -153,7 +158,8 @@
                         <tr>
                             <td>{{ record.date.strftime('%d %b %Y') }}</td>
                             <td>
-                                <span class="badge {% if record.status == 'present' %}bg-success{% elif record.status == 'late' %}bg-warning{% elif record.status == 'absent' %}bg-danger{% else %}bg-info{% endif %}">
+                                <span
+                                    class="badge {% if record.status == 'present' %}bg-success{% elif record.status == 'late' %}bg-warning{% elif record.status == 'absent' %}bg-danger{% else %}bg-info{% endif %}">
                                     {{ record.status.capitalize() }}
                                 </span>
                             </td>
@@ -178,9 +184,46 @@
     {% endif %}
 </div>
 
+<!-- Print Button -->
+<div class="mt-4 text-center mb-5">
+    <button onclick="window.print()" class="btn btn-secondary">
+        <i class="fas fa-print"></i> Print Report
+    </button>
+</div>
+</div>
+
 <style>
     .card {
         border-radius: 0.5rem;
+    }
+
+    @media print {
+
+        .sidebar,
+        header,
+        .btn,
+        .card:has(form),
+        .nav-link,
+        .flashes {
+            display: none !important;
+        }
+
+        .main-content {
+            margin-left: 0 !important;
+            padding: 20px !important;
+            width: 100% !important;
+        }
+
+        .card {
+            border: 1px solid #ddd !important;
+            box-shadow: none !important;
+            margin-bottom: 20px !important;
+            break-inside: avoid;
+        }
+
+        body {
+            background: white !important;
+        }
     }
 </style>
 {% endblock %}
