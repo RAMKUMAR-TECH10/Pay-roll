@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}Employees{% endblock %}
+{% block header %}Manage Employees{% endblock %}
+
+{% block content %}
+<div style="display: flex; gap: 30px;">
+    <!-- Add Employee Form -->
+    <div class="card" style="flex: 1; height: fit-content;">
+        <h3>Add New Employee</h3>
+        <form method="POST" action="{{ url_for('employees') }}">
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; color: #94a3b8;">Full Name</label>
+                <input type="text" name="name" required
+                    style="width: 100%; padding: 10px; background: #334155; border: 1px solid #475569; color: white; border-radius: 5px;">
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; color: #94a3b8;">Role</label>
+                <select name="role"
+                    style="width: 100%; padding: 10px; background: #334155; border: 1px solid #475569; color: white; border-radius: 5px;">
+                    <option value="Worker">Worker</option>
+                    <option value="Supervisor">Supervisor</option>
+                    <option value="Manager">Manager</option>
+                </select>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 5px; color: #94a3b8;">Rate per Bundle (₹)</label>
+                <input type="number" step="0.01" name="rate" value="5.00" required
+                    style="width: 100%; padding: 10px; background: #334155; border: 1px solid #475569; color: white; border-radius: 5px;">
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%;">Add Employee</button>
+        </form>
+    </div>
+
+    <!-- Employee List -->
+    <div style="flex: 2;">
+        <div style="margin-bottom: 20px; position: relative;">
+            <input type="text" id="employeeSearch" placeholder="Search employees by name or role..."
+                style="width: 100%; padding: 12px 20px; padding-left: 45px; background: var(--card-bg); border: 1px solid var(--border-color); color: white; border-radius: 12px; font-size: 0.95rem;">
+            <span
+                style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #8b949e; font-size: 1.2rem;">🔍</span>
+        </div>
+        <div style="max-height: 500px; overflow-y: auto; border-radius: 16px; border: 1px solid var(--border-color);">
+            <table id="employeeTable" style="margin-top: 0;">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Role</th>
+                        <th>Rate</th>
+                        <th>Joined</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for emp in employees %}
+                    <tr>
+                        <td>#{{ emp.id }}</td>
+                        <td>{{ emp.name }}</td>
+                        <td>{{ emp.role }}</td>
+                        <td>₹{{ "%.2f"|format(emp.rate_per_bundle) }}</td>
+                        <td>{{ emp.joined_date }}</td>
+                        <td>
+                            <div style="display: flex; gap: 10px;">
+                                <button class="btn" style="padding: 5px 10px; background: #334155; font-size: 0.8rem;"
+                                    onclick="openEditModal('{{ emp.id }}', '{{ emp.name }}', '{{ emp.role }}', '{{ emp.rate_per_bundle }}')">Edit</button>
+                                <a href="{{ url_for('delete_employee', id=emp.id) }}" class="btn btn-danger"
+                                    style="padding: 5px 10px; font-size: 0.8rem;"
+                                    onclick="return confirm('Are you sure you want to delete this employee?')">Delete</a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" style="text-align: center; color: #94a3b8; padding: 30px;">No employees found.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Edit Employee Modal -->
+    <div id="editModal"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center;">
+        <div class="card" style="width: 400px; padding: 30px;">
+            <h3>Edit Employee</h3>
+            <form id="editForm" method="POST" action="">
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; color: #94a3b8;">Full Name</label>
+                    <input type="text" name="name" id="edit_name" required
+                        style="width: 100%; padding: 10px; background: #334155; border: 1px solid #475569; color: white; border-radius: 5px;">
+                </div>
+
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; color: #94a3b8;">Role</label>
+                    <select name="role" id="edit_role"
+                        style="width: 100%; padding: 10px; background: #334155; border: 1px solid #475569; color: white; border-radius: 5px;">
+                        <option value="Worker">Worker</option>
+                        <option value="Supervisor">Supervisor</option>
+                        <option value="Manager">Manager</option>
+                    </select>
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 5px; color: #94a3b8;">Rate per Bundle (₹)</label>
+                    <input type="number" step="0.01" name="rate" id="edit_rate" required
+                        style="width: 100%; padding: 10px; background: #334155; border: 1px solid #475569; color: white; border-radius: 5px;">
+                </div>
+
+                <div style="display: flex; gap: 10px;">
+                    <button type="submit" class="btn btn-primary" style="flex: 1;">Update</button>
+                    <button type="button" class="btn" style="flex: 1; background: #334155;"
+                        onclick="closeEditModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openEditModal(id, name, role, rate) {
+            document.getElementById('editForm').action = '/edit_employee/' + id;
+            document.getElementById('edit_name').value = name;
+            document.getElementById('edit_role').value = role;
+            document.getElementById('edit_rate').value = rate;
+            document.getElementById('editModal').style.display = 'flex';
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').style.display = 'none';
+        }
+
+        // Search Filter Logic
+        document.getElementById('employeeSearch').addEventListener('keyup', function () {
+            const searchTerm = this.value.toLowerCase();
+            const rows = document.querySelectorAll('#employeeTable tbody tr');
+
+            rows.forEach(row => {
+                const text = row.innerText.toLowerCase();
+                if (text.includes(searchTerm)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+    </script>
+    {% endblock %}

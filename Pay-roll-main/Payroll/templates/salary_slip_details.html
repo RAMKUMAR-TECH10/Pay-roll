@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}Salary Slip #{{ payroll.id }}{% endblock %}
+{% block header %}Salary Slip Details{% endblock %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 0 auto;">
+    <div class="card" style="padding: 40px; position: relative;">
+        <!-- Watermark / Stamp -->
+        <div style="position: absolute; top: 20px; right: 20px; border: 3px solid var(--success-color); color: var(--success-color); padding: 5px 15px; border-radius: 5px; transform: rotate(15deg); font-weight: bold; font-size: 1.2rem; opacity: 0.6;">
+            PAID
+        </div>
+
+        <div style="display: flex; justify-content: space-between; border-bottom: 2px solid var(--border-color); padding-bottom: 20px; margin-bottom: 30px;">
+            <div>
+                <h2 style="margin: 0; color: var(--accent-color);">🔥 MatchboxOS</h2>
+                <p style="color: #94a3b8; margin: 5px 0;">Matchbox Manufacturing Unit</p>
+            </div>
+            <div style="text-align: right;">
+                <h3 style="margin: 0;">SLIP #{{ payroll.id }}</h3>
+                <p style="color: #94a3b8; margin: 5px 0;">Date: {{ payroll.date_generated.strftime('%Y-%m-%d %H:%M') }}</p>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 40px;">
+            <div>
+                <h4 style="color: #94a3b8; text-transform: uppercase; margin-bottom: 10px;">Employee Details</h4>
+                <div style="font-size: 1.1rem; font-weight: bold;">{{ payroll.employee.name }}</div>
+                <div style="color: #94a3b8;">{{ payroll.employee.role }}</div>
+                <div style="color: #94a3b8;">Employee ID: #{{ payroll.employee.id }}</div>
+            </div>
+            <div style="text-align: right;">
+                <h4 style="color: #94a3b8; text-transform: uppercase; margin-bottom: 10px;">Pay Period</h4>
+                <div style="font-weight: bold;">{{ payroll.start_date }} to {{ payroll.end_date }}</div>
+                <div style="color: #94a3b8;">Status: {{ payroll.status }}</div>
+            </div>
+        </div>
+
+        <h4 style="color: #94a3b8; text-transform: uppercase; margin-bottom: 10px;">Production Breakdown</h4>
+        <table style="margin-top: 0; margin-bottom: 30px;">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th style="text-align: right;">Bundles Produced</th>
+                    <th style="text-align: right;">Rate</th>
+                    <th style="text-align: right;">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td>{{ log.date }}</td>
+                    <td style="text-align: right;">{{ log.bundles_produced }}</td>
+                    <td style="text-align: right;">₹{{ "%.2f"|format(payroll.employee.rate_per_bundle) }}</td>
+                    <td style="text-align: right;">₹{{ "%.2f"|format(log.bundles_produced * payroll.employee.rate_per_bundle) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr style="font-weight: bold; background: rgba(255,255,255,0.05);">
+                    <td>TOTAL</td>
+                    <td style="text-align: right;">{{ payroll.total_bundles }}</td>
+                    <td></td>
+                    <td style="text-align: right; color: var(--success-color); font-size: 1.2rem;">₹{{ "%.2f"|format(payroll.total_amount) }}</td>
+                </tr>
+            </tfoot>
+        </table>
+
+        <div style="margin-top: 50px; display: flex; justify-content: space-between; align-items: flex-end;">
+            <div style="color: #64748b; font-size: 0.9rem;">
+                This is a computer-generated salary slip.
+            </div>
+            <div style="text-align: center; width: 200px; border-top: 1px solid #475569; padding-top: 10px;">
+                Authorized Signatory
+            </div>
+        </div>
+    </div>
+
+    <div style="margin-top: 20px; display: flex; gap: 10px;">
+        <button onclick="window.print()" class="btn btn-primary">Print Slip</button>
+        <a href="{{ url_for('payroll') }}" class="btn" style="background: #334155;">Back to Payroll</a>
+    </div>
+</div>
+
+<style>
+@media print {
+    .sidebar, .btn, header { display: none !important; }
+    .main-content { padding: 0 !important; margin: 0 !important; }
+    body { background: white !important; color: black !important; }
+    .card { border: none !important; box-shadow: none !important; background: white !important; color: black !important; }
+    th { background: #f1f5f9 !important; color: #475569 !important; }
+    td, th { border-color: #e2e8f0 !important; }
+}
+</style>
+{% endblock %}

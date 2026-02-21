@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}My Profile{% endblock %}
+{% block header %}My Profile{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 600px; margin: 0 auto;">
+    <div
+        style="display: flex; align-items: center; margin-bottom: 30px; border-bottom: 1px solid #334155; padding-bottom: 20px;">
+        <div
+            style="width: 80px; height: 80px; background: #3b82f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; color: white; margin-right: 20px;">
+            {{ current_user.username[0]|upper }}
+        </div>
+        <div>
+            <h2 style="margin: 0; color: white;">{{ current_user.full_name }}</h2>
+            <p style="margin: 5px 0 0; color: #94a3b8;">{{ current_user.role|title }}</p>
+            <p style="margin: 5px 0 0; color: #64748b; font-size: 0.9rem;">Member since {{
+                current_user.created_at.strftime('%B %Y') }}</p>
+        </div>
+    </div>
+
+    <form method="POST" action="{{ url_for('auth.profile') }}">
+        <h3 style="margin-bottom: 20px; color: #cbd5e1;">Personal Information</h3>
+
+        <div style="margin-bottom: 15px;">
+            <label style="display: block; margin-bottom: 5px; color: #94a3b8;">Username</label>
+            <input type="text" value="{{ current_user.username }}" disabled
+                style="width: 100%; padding: 10px; background: #1e293b; border: 1px solid #334155; color: #94a3b8; border-radius: 5px;">
+            <small style="color: #64748b;">Username cannot be changed.</small>
+        </div>
+
+        <div style="margin-bottom: 15px;">
+            <label style="display: block; margin-bottom: 5px; color: #94a3b8;">Full Name</label>
+            <input type="text" name="full_name" value="{{ current_user.full_name }}" required
+                style="width: 100%; padding: 10px; background: #334155; border: 1px solid #475569; color: white; border-radius: 5px;">
+        </div>
+
+        <div style="margin-bottom: 30px;">
+            <label style="display: block; margin-bottom: 5px; color: #94a3b8;">Email Address</label>
+            <input type="email" name="email" value="{{ current_user.email }}" required
+                style="width: 100%; padding: 10px; background: #334155; border: 1px solid #475569; color: white; border-radius: 5px;">
+        </div>
+
+        <h3 style="margin-bottom: 20px; color: #cbd5e1; border-top: 1px solid #334155; padding-top: 20px;">Change
+            Password</h3>
+        <p style="color: #64748b; margin-bottom: 15px; font-size: 0.9rem;">Leave blank to keep your current password.
+        </p>
+
+        <div style="margin-bottom: 15px;">
+            <label style="display: block; margin-bottom: 5px; color: #94a3b8;">New Password</label>
+            <input type="password" name="new_password" minlength="6"
+                style="width: 100%; padding: 10px; background: #334155; border: 1px solid #475569; color: white; border-radius: 5px;">
+        </div>
+
+        <div style="margin-bottom: 30px;">
+            <label style="display: block; margin-bottom: 5px; color: #94a3b8;">Confirm New Password</label>
+            <input type="password" name="confirm_password" minlength="6"
+                style="width: 100%; padding: 10px; background: #334155; border: 1px solid #475569; color: white; border-radius: 5px;">
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+            <button type="submit" class="btn btn-primary" style="padding: 10px 25px;">Update Profile</button>
+            <a href="{{ url_for('main.dashboard') }}" class="btn"
+                style="background: transparent; border: 1px solid #475569; color: #cbd5e1;">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block title %}Employee Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="employee-header d-flex justify-content-between align-items-center">
+        <div>
+            <h2 style="margin: 0;">Employee Management</h2>
+            <p style="color: rgba(255, 255, 255, 0.8); font-size: 0.9rem; margin-top: 5px;">Total Employees: {{
+                total_employees }} | Active: {{ total_active }}</p>
+        </div>
+        {% if current_user.has_permission('create') %}
+        <a href="{{ url_for('employee.add_employee') }}" class="btn btn-primary"
+            style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;">
+            <i class="fas fa-plus"></i> Add Employee
+        </a>
+        {% endif %}
+    </div>
+
+    <!-- Search & Filter -->
+    <div class="card mb-4 border-0 shadow-sm">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-5">
+                    <div class="input-group input-group-lg">
+                        <span class="input-group-text border-end-0"
+                            style="background: var(--card-bg); border-color: var(--border-color); color: var(--text-color);">
+                            <i class="fas fa-search"></i>
+                        </span>
+                        <input type="text" name="search" class="form-control border-start-0"
+                            placeholder="Search by ID, name, email, or department..." value="{{ search }}"
+                            style="border-left: 0; padding: 12px 15px; font-size: 14px; background: var(--card-bg); border-color: var(--border-color); color: white;">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select name="status" class="form-select form-select-lg"
+                        style="padding: 12px 15px; font-size: 14px; background-color: var(--card-bg); border-color: var(--border-color); color: white;">
+                        <option value="">-- All Status --</option>
+                        <option value="active" {% if status=='active' %}selected{% endif %}>Active</option>
+                        <option value="inactive" {% if status=='inactive' %}selected{% endif %}>Inactive</option>
+                        <option value="terminated" {% if status=='terminated' %}selected{% endif %}>Terminated</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg flex-grow-1">
+                            <i class="fas fa-filter"></i> Apply
+                        </button>
+                        {% if search or status %}
+                        <a href="{{ url_for('employee.list_employees') }}" class="btn btn-secondary btn-lg"
+                            title="Clear All">
+                            <i class="fas fa-times"></i>
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Employees Table -->
+    <div class="card p-0" style="overflow: hidden;">
+        <div class="table-responsive">
+            <table class="table mb-0">
+                <thead>
+                    <tr>
+                        <th>Employee ID</th>
+                        <th>Name</th>
+                        <th>Department</th>
+                        <th>Position</th>
+                        <th>Base Salary</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if employees.items %}
+                    {% for employee in employees.items %}
+                    <tr>
+                        <td><strong>{{ employee.employee_id }}</strong></td>
+                        <td>{{ employee.get_full_name() }}</td>
+                        <td>{{ employee.department }}</td>
+                        <td>{{ employee.position }}</td>
+                        <td>₹ {{ "%.2f"|format(employee.base_salary or 0) }}</td>
+                        <td>
+                            <span
+                                class="badge {% if employee.status == 'active' %}bg-success{% elif employee.status == 'inactive' %}bg-warning{% else %}bg-danger{% endif %}">
+                                {{ employee.status.capitalize() }}
+                            </span>
+                        </td>
+                        <td>
+                            <a href="{{ url_for('employee.view_employee', emp_id=employee.id) }}"
+                                class="btn btn-sm btn-info" title="View">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            {% if current_user.has_permission('edit') %}
+                            <a href="{{ url_for('employee.edit_employee', emp_id=employee.id) }}"
+                                class="btn btn-sm btn-warning" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            {% endif %}
+                            {% if current_user.has_permission('delete') and employee.status != 'terminated' %}
+                            <form method="POST" action="{{ url_for('employee.delete_employee', emp_id=employee.id) }}"
+                                style="display: inline;">
+                                <button type="submit" class="btn btn-sm btn-danger" title="Terminate Employee"
+                                    onclick="return confirm('WARNING: Are you sure you want to terminate this employee?')">
+                                    <i class="fas fa-user-slash"></i> Terminate
+                                </button>
+                            </form>
+                            {% endif %}
+                            {% if current_user.has_permission('edit') and employee.status == 'terminated' %}
+                            <form method="POST" action="{{ url_for('employee.rejoin_employee', emp_id=employee.id) }}"
+                                style="display: inline;">
+                                <button type="submit" class="btn btn-sm btn-success" title="Rejoin Employee"
+                                    onclick="return confirm('Are you sure you want to rejoin this employee?')">
+                                    <i class="fas fa-user-plus"></i> Rejoin
+                                </button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center py-4" style="color: #64748b;">
+                            No employees found.
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if employees.pages is defined and employees.pages > 1 %}
+    <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if employees.has_prev %}
+            <li class="page-item">
+                <a class="page-link"
+                    href="{{ url_for('employee.list_employees', page=employees.prev_num, search=search) }}">Previous</a>
+            </li>
+            {% endif %}
+
+            {% for page_num in employees.iter_pages() %}
+            {% if page_num %}
+            {% if page_num == employees.page %}
+            <li class="page-item active"><span class="page-link">{{ page_num }}</span></li>
+            {% else %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('employee.list_employees', page=page_num, search=search) }}">{{
+                    page_num }}</a>
+            </li>
+            {% endif %}
+            {% endif %}
+            {% endfor %}
+
+            {% if employees.has_next %}
+            <li class="page-item">
+                <a class="page-link"
+                    href="{{ url_for('employee.list_employees', page=employees.next_num, search=search) }}">Next</a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+
+<style>
+    .table tbody tr:hover td {
+        background-color: rgba(255, 255, 255, 0.05) !important;
+    }
+</style>
+{% endblock %}
