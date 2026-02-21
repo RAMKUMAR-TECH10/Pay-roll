@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}User Management{% endblock %}
+{% block header %}System Users{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <div>
+            <h3>All Registered Users</h3>
+            <p style="color: #64748b;">Managing {{ users|length }} active accounts</p>
+        </div>
+        <a href="{{ url_for('auth.create_user') }}" class="btn btn-primary"
+            style="padding: 10px 20px; text-decoration: none;">
+            + Create New User
+        </a>
+    </div>
+
+    <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="text-align: left; border-bottom: 1px solid #334155;">
+                    <th style="padding: 15px; color: #94a3b8; font-weight: 500;">User</th>
+                    <th style="padding: 15px; color: #94a3b8; font-weight: 500;">Role</th>
+                    <th style="padding: 15px; color: #94a3b8; font-weight: 500;">Status</th>
+                    <th style="padding: 15px; color: #94a3b8; font-weight: 500;">Last Login</th>
+                    <th style="padding: 15px; color: #94a3b8; font-weight: 500;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr style="border-bottom: 1px solid #1e293b;">
+                    <td style="padding: 15px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div
+                                style="width: 32px; height: 32px; background: #3b82f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; color: white;">
+                                {{ user.username[0]|upper }}
+                            </div>
+                            <div>
+                                <div style="font-weight: 500; color: #e2e8f0;">{{ user.full_name }}</div>
+                                <div style="font-size: 0.8rem; color: #64748b;">{{ user.email }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td style="padding: 15px;">
+                        <form method="POST" action="{{ url_for('auth.change_user_role', user_id=user.id) }}"
+                            style="display: inline;">
+                            <select name="role" onchange="this.form.submit()" {% if user.id==current_user.id
+                                %}disabled{% endif %}
+                                style="background: #0f172a; border: 1px solid #334155; color: #cbd5e1; padding: 5px; border-radius: 4px; font-size: 0.9rem;">
+                                <option value="admin" {% if user.role=='admin' %}selected{% endif %}>Admin</option>
+                                <option value="operator" {% if user.role=='operator' %}selected{% endif %}>Operator
+                                </option>
+                                <option value="viewer" {% if user.role=='viewer' %}selected{% endif %}>Viewer</option>
+                            </select>
+                        </form>
+                    </td>
+                    <td style="padding: 15px;">
+                        {% if user.is_active %}
+                        <span
+                            style="background: rgba(34, 197, 94, 0.1); color: #22c55e; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem;">Active</span>
+                        {% else %}
+                        <span
+                            style="background: rgba(239, 68, 68, 0.1); color: #ef4444; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem;">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 15px; color: #94a3b8; font-size: 0.9rem;">
+                        {{ user.last_login.strftime('%Y-%m-%d %H:%M') if user.last_login else 'Never' }}
+                    </td>
+                    <td style="padding: 15px;">
+                        {% if user.id != current_user.id %}
+                        <form method="POST" action="{{ url_for('auth.toggle_user_active', user_id=user.id) }}"
+                            style="display: inline;">
+                            {% if user.is_active %}
+                            <button type="submit" class="btn btn-sm btn-danger"
+                                style="padding: 5px 10px; font-size: 0.8rem; background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3);">
+                                Deactivate
+                            </button>
+                            {% else %}
+                            <button type="submit" class="btn btn-sm btn-success"
+                                style="padding: 5px 10px; font-size: 0.8rem; background: rgba(34, 197, 94, 0.1); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.3);">
+                                Activate
+                            </button>
+                            {% endif %}
+                        </form>
+                        {% else %}
+                        <span style="color: #64748b; font-size: 0.8rem;">Current User</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

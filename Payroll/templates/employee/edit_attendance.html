@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Attendance - {{ attendance.employee.get_full_name() }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h4 class="mb-0"><i class="fas fa-edit"></i> Edit Attendance</h4>
+                    <p class="mb-0 small">{{ attendance.employee.get_full_name() }} ({{ attendance.employee.employee_id }})</p>
+                </div>
+                <div class="card-body">
+                    <form method="POST" class="needs-validation">
+                        <div class="alert alert-info">
+                            <strong>Date:</strong> {{ attendance.date.strftime('%d %B %Y') }}
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="status" class="form-label">Attendance Status <span class="text-danger">*</span></label>
+                                <select class="form-select" id="status" name="status" required>
+                                    <option value="present" {% if attendance.status == 'present' %}selected{% endif %}>Present</option>
+                                    <option value="absent" {% if attendance.status == 'absent' %}selected{% endif %}>Absent</option>
+                                    <option value="late" {% if attendance.status == 'late' %}selected{% endif %}>Late</option>
+                                    <option value="half-day" {% if attendance.status == 'half-day' %}selected{% endif %}>Half Day</option>
+                                    <option value="sick" {% if attendance.status == 'sick' %}selected{% endif %}>Sick Leave</option>
+                                    <option value="leave" {% if attendance.status == 'leave' %}selected{% endif %}>On Leave</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="clock_in" class="form-label">Clock In Time</label>
+                                <input type="time" class="form-control" id="clock_in" name="clock_in" value="{{ attendance.clock_in.strftime('%H:%M') if attendance.clock_in else '' }}">
+                                <small class="text-muted">Leave blank if not applicable</small>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="clock_out" class="form-label">Clock Out Time</label>
+                                <input type="time" class="form-control" id="clock_out" name="clock_out" value="{{ attendance.clock_out.strftime('%H:%M') if attendance.clock_out else '' }}">
+                                <small class="text-muted">Leave blank if not applicable</small>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Hours Worked</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" value="{{ "%.2f"|format(attendance.hours_worked) }}" disabled>
+                                <span class="input-group-text">hours</span>
+                            </div>
+                            <small class="text-muted">This will be automatically calculated from clock in/out times.</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Notes</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="3">{{ attendance.notes or '' }}</textarea>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save"></i> Update Attendance
+                            </button>
+                            <a href="{{ url_for('employee.view_employee', emp_id=attendance.employee_id) }}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

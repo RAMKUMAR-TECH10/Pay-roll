@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Preferences{% endblock %}
+{% block header %}Notification Settings{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 600px; margin: 0 auto;">
+    <h3 style="margin-bottom: 20px; color: #cbd5e1;">Email Notifications</h3>
+    <p style="color: #64748b; margin-bottom: 30px;">Manage what emails you receive from the system.</p>
+
+    <form method="POST" action="{{ url_for('auth.preferences') }}">
+
+        <div
+            style="background: rgba(59, 130, 246, 0.1); padding: 20px; border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.2); margin-bottom: 25px;">
+            <label style="display: flex; align-items: start; gap: 15px; cursor: pointer;">
+                <input type="checkbox" name="email_notifications" id="email_notifications" {% if
+                    prefs.email_notifications %}checked{% endif %} style="margin-top: 5px;">
+                <div>
+                    <strong style="display: block; color: white; margin-bottom: 5px;">Enable All Notifications</strong>
+                    <span style="color: #94a3b8; font-size: 0.9rem;">Turn this off to disable all email communications
+                        completely.</span>
+                </div>
+            </label>
+        </div>
+
+        <div id="specific-settings"
+            style="opacity: {% if prefs.email_notifications %}1{% else %}0.5{% endif %}; pointer-events: {% if prefs.email_notifications %}auto{% else %}none{% endif %};">
+            <h4 style="margin: 20px 0 15px; color: #cbd5e1;">Specific Alerts</h4>
+
+            <div style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #334155;">
+                <label style="display: flex; align-items: center; gap: 15px; cursor: pointer;">
+                    <input type="checkbox" name="low_stock_alerts" {% if prefs.low_stock_alerts %}checked{% endif %}>
+                    <div>
+                        <strong style="color: #e2e8f0;">Low Stock Alerts</strong>
+                        <div style="color: #64748b; font-size: 0.85rem; margin-top: 2px;">Receive instant alerts when
+                            materials fall below minimum threshold.</div>
+                    </div>
+                </label>
+            </div>
+
+            <div style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #334155;">
+                <label style="display: flex; align-items: center; gap: 15px; cursor: pointer;">
+                    <input type="checkbox" name="daily_summary" {% if prefs.daily_summary %}checked{% endif %}>
+                    <div>
+                        <strong style="color: #e2e8f0;">Daily Production Summary</strong>
+                        <div style="color: #64748b; font-size: 0.85rem; margin-top: 2px;">Get a daily email with total
+                            production numbers and costs.</div>
+                    </div>
+                </label>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="display: flex; align-items: center; gap: 15px; cursor: pointer;">
+                    <input type="checkbox" name="weekly_report" {% if prefs.weekly_report %}checked{% endif %}>
+                    <div>
+                        <strong style="color: #e2e8f0;">Weekly Performance Report</strong>
+                        <div style="color: #64748b; font-size: 0.85rem; margin-top: 2px;">Comprehensive weekly report
+                            sent every Monday morning.</div>
+                    </div>
+                </label>
+            </div>
+        </div>
+
+        <div style="margin-top: 30px; display: flex; gap: 10px;">
+            <button type="submit" class="btn btn-primary" style="padding: 10px 25px;">Save Preferences</button>
+            <a href="{{ url_for('main.dashboard') }}" class="btn"
+                style="background: transparent; border: 1px solid #475569; color: #cbd5e1;">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<script>
+    document.getElementById('email_notifications').addEventListener('change', function () {
+        const settings = document.getElementById('specific-settings');
+        if (this.checked) {
+            settings.style.opacity = '1';
+            settings.style.pointerEvents = 'auto';
+        } else {
+            settings.style.opacity = '0.5';
+            settings.style.pointerEvents = 'none';
+        }
+    });
+</script>
+{% endblock %}
